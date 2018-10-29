@@ -1,0 +1,244 @@
+---
+ID: 3570
+post_title: >
+  吴恩达深度学习课程
+  DeepLearning.ai
+  编程作业（1-4）Part.2
+post_name: '%e5%90%b4%e6%81%a9%e8%be%be%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e8%af%be%e7%a8%8b-deeplearning-ai-%e7%bc%96%e7%a8%8b%e4%bd%9c%e4%b8%9a%ef%bc%88%e7%ac%ac%e5%9b%9b%e5%91%a8%ef%bc%89part-2'
+author: 小奥
+post_date: 2018-02-03 19:40:27
+layout: post
+link: >
+  http://www.yushuai.me/2018/02/03/3570.html
+published: true
+tags:
+  - Python
+  - 人工智能
+  - 神经网络
+categories:
+  - Deep Learning
+---
+<p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="font-size:32px;font-family:宋体">应用于图像分类的深度神经网络：应用</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left;text-indent:28px">完成本节后，您将完成第4周的最后编程任务，也完成本课程的最后编程任务！</p><p style="margin-top:auto;margin-bottom: auto;text-align:left;text-indent:28px">您将使用您在之前的作业中实施的函数来构建深度网络，并将其应用于猫与非猫分类。 希望相对于之前的逻辑回归实现，您将看到精度的提高。</p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="font-size: 16px;font-family:宋体">完成这项任务后，您将能够：</span></strong><span style="font-size:16px;font-family:宋体"> </span></p><p style="margin-top:auto;margin-bottom: auto;text-align:left">建立和应用深度神经网络监督学习。</p><h2>1 – 包</h2><p>Let&#39;s first import all the packages that you will need during this assignment.</p><ul class=" list-paddingleft-2"><li><p><a href="http://www.numpy.org/" target="_blank">numpy</a> is the fundamental package for scientific computing with Python.</p></li><li><p><a href="http://matplotlib.org" target="_blank">matplotlib</a> is a library to plot graphs in Python.</p></li><li><p><a href="http://www.h5py.org" target="_blank">h5py</a> is a common package to interact with a dataset &nbsp; &nbsp; &nbsp;that is stored on an H5 file.</p></li><li><p><a href="http://www.pythonware.com/products/pil/" target="_blank">PIL</a> and &nbsp; &nbsp; &nbsp;<a href="https://www.scipy.org/" target="_blank">scipy</a> are used here &nbsp; &nbsp; &nbsp;to test your model with your own picture at the end.</p></li><li><p>dnn_app_utils provides the &nbsp; &nbsp; &nbsp;functions implemented in the &quot;Building your Deep Neural Network: Step &nbsp; &nbsp; &nbsp;by Step&quot; assignment to this notebook.</p></li><li><p>np.random.seed(1) is used to keep &nbsp; &nbsp; &nbsp;all the random function calls consistent. It will help us grade your work.</p></li></ul><pre class="brush:python;toolbar:false">import&nbsp;time
+import&nbsp;numpy&nbsp;as&nbsp;np
+import&nbsp;h5py
+import&nbsp;matplotlib.pyplot&nbsp;as&nbsp;plt
+import&nbsp;scipy
+from&nbsp;PIL&nbsp;import&nbsp;Image
+from&nbsp;scipy&nbsp;import&nbsp;ndimage
+from&nbsp;dnn_app_utils_v2&nbsp;import&nbsp;*
+%matplotlib&nbsp;inline
+plt.rcParams[&#39;figure.figsize&#39;]&nbsp;=&nbsp;(5.0,&nbsp;4.0)&nbsp;#&nbsp;set&nbsp;default&nbsp;size&nbsp;of&nbsp;plots
+plt.rcParams[&#39;image.interpolation&#39;]&nbsp;=&nbsp;&#39;nearest&#39;
+plt.rcParams[&#39;image.cmap&#39;]&nbsp;=&nbsp;&#39;gray&#39;
+%load_ext&nbsp;autoreload
+%autoreload&nbsp;2
+np.random.seed(1)</pre><h2>2 – 数据集</h2><p>您将使用与“Logistic回归作为神经网络”（作业2）相同的“猫与非猫”数据集。 您之前建立的模型在分类猫和非猫图像时的测试准确率为70％。 希望你的新模型能更好地发挥作用！</p><p><strong><span style="font-family:宋体">Problem Statement</span></strong>: You are given a dataset (&quot;data.h5&quot;) containing:</p><p>-&nbsp;a&nbsp;training&nbsp;set&nbsp;of&nbsp;m_train&nbsp;images&nbsp;labelled&nbsp;as&nbsp;cat&nbsp;(1)&nbsp;or&nbsp;non-cat&nbsp;(0)<br/>-&nbsp;a&nbsp;test&nbsp;set&nbsp;of&nbsp;m_test&nbsp;images&nbsp;labelled&nbsp;as&nbsp;cat&nbsp;and&nbsp;non-cat<br/>-&nbsp;each&nbsp;image&nbsp;is&nbsp;of&nbsp;shape&nbsp;(num_px,&nbsp;num_px,&nbsp;3)&nbsp;where&nbsp;3&nbsp;is&nbsp;for&nbsp;the&nbsp;3&nbsp;channels&nbsp;(RGB).</p><p>让我们更熟悉数据集。 通过运行下面的单元格加载数据。</p><pre class="brush:python;toolbar:false">train_x_orig,&nbsp;train_y,&nbsp;test_x_orig,&nbsp;test_y,&nbsp;classes&nbsp;=&nbsp;load_data()#把所有的测试数据通过load_data()载入到前序变量中
+#train_x_orig保存训练数据的RGB数据，train_y训练数据的标记（1为猫，0非猫）</pre><p>&nbsp;</p><p>以下代码将显示数据集中的图像。 随意更改索引并重新运行单元格多次以查看其他图像。</p><pre class="brush:python;toolbar:false">#&nbsp;Example&nbsp;of&nbsp;a&nbsp;picture
+index&nbsp;=&nbsp;7
+plt.imshow(train_x_orig[index])#画出第几个图片
+print(&quot;y=&quot;+str(train_y[0,index])+&quot;.&nbsp;It&#39;s&nbsp;a&quot;+classes[train_y[0,index]].decode(&quot;utf-8&quot;)+&quot;picture.&quot;)</pre><p>&nbsp;</p><p>以下代码显示样本集的尺寸信息</p><pre class="brush:python;toolbar:false">#&nbsp;Explore&nbsp;your&nbsp;dataset
+m_train&nbsp;=&nbsp;train_x_orig.shape[0]
+num_px&nbsp;=&nbsp;train_x_orig.shape[1]
+m_test&nbsp;=&nbsp;test_x_orig.shape[0]
+&nbsp;
+print&nbsp;(&quot;Number&nbsp;of&nbsp;training&nbsp;examples:&nbsp;&quot;&nbsp;+&nbsp;str(m_train))
+print&nbsp;(&quot;Number&nbsp;of&nbsp;testing&nbsp;examples:&nbsp;&quot;&nbsp;+&nbsp;str(m_test))
+print&nbsp;(&quot;Each&nbsp;image&nbsp;is&nbsp;of&nbsp;size:&nbsp;(&quot;&nbsp;+&nbsp;str(num_px)&nbsp;+&nbsp;&quot;,&nbsp;&quot;&nbsp;+&nbsp;str(num_px)&nbsp;+&nbsp;&quot;,&nbsp;3)&quot;)
+print&nbsp;(&quot;train_x_orig&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(train_x_orig.shape))
+print&nbsp;(&quot;train_y&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(train_y.shape))
+print&nbsp;(&quot;test_x_orig&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(test_x_orig.shape))
+print&nbsp;(&quot;test_y&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(test_y.shape))</pre><p>像往常一样，在将图像馈送到网络之前，您会重塑图像的向量并对其进行标准化。代码在下面的单元格中给出。</p><p style="text-align:center"><img src="/wp-content/uploads/image/20180203/1517667135794468.jpg" title="1517667135794468.jpg" alt="1517667135794468.jpg" width="526" height="284"/></p><pre class="brush:python;toolbar:false">#&nbsp;Reshape&nbsp;the&nbsp;training&nbsp;and&nbsp;test&nbsp;examples
+train_x_flatten&nbsp;=&nbsp;train_x_orig.reshape(train_x_orig.shape[0],&nbsp;-1).T
+#&nbsp;The&nbsp;&quot;-1&quot;&nbsp;makes&nbsp;reshape&nbsp;flatten&nbsp;the&nbsp;remaining&nbsp;dimensions
+test_x_flatten&nbsp;=&nbsp;test_x_orig.reshape(test_x_orig.shape[0],&nbsp;-1).T
+&nbsp;
+#&nbsp;标准化数据，使他们的特征值为0或1
+train_x&nbsp;=&nbsp;train_x_flatten/255.
+test_x&nbsp;=&nbsp;test_x_flatten/255.
+&nbsp;
+print&nbsp;(&quot;train_x&#39;s&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(train_x.shape))
+print&nbsp;(&quot;test_x&#39;s&nbsp;shape:&nbsp;&quot;&nbsp;+&nbsp;str(test_x.shape))</pre><p>&nbsp;</p><p>12288就是之前我们reshape向量时讲的，RGB的三个向量乘3，即64*64*3。</p><p>&nbsp;</p><p>&nbsp;</p><h2>3 – 模型的结构</h2><p>现在您已经熟悉数据集了，现在是构建一个深层神经网络来区分猫图像和非猫图像的时候了。</p><p>你将建立两个不同的模型，就像之前那个PART.1中一样，一个2层模型一个L层模型。</p><p>然后将要比较这两个模型。关于结构图在PART.1中都已经叙述，在此不再重述。</p><h3>3.1 – 2层深度神经网络模型</h3><p>对于2层模型来说，它可以被简单概括为: <em><strong><span style="font-family:宋体">INPUT -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID -&gt; OUTPUT</span></strong></em>.</p><p>关于2层模型的结构图做出下面解释: <br/> - 输入是一个（64,64,3）的图像，然后reshape为（12288，1）。注意<strong><span style="color:red">这是一个样本的向量</span></strong>。<br/> - 相应的矢量<span style="font-size:22px;font-family:&#39;MathJax_Main&#39;,serif">[</span><span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>0</span></span>,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>1</span></span>,...,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>12287</span></span><span style="display:inline-block"><span style="clip:rect(1.462em 1000em 2.727em -0.436em)">]</span><sup>T</sup></span>接下来就右乘权重矩阵W1，W1的尺寸为（n<sup>[l]</sup>,12288）。<strong><span style="color:red">要牢记权重矩阵的维度规律</span></strong>。<br/> - 然后，添加一个偏差项，并采用激活函数（采用RELU）获得以下向量: <span style="display:inline-block"><span style="font-size:22px;font-family:&#39;MathJax_Main&#39;,serif"><span style="display:inline-block"><span style="clip:rect(1.122em 1000em 2.922em -0.338em)">[<span style="display:inline-block"><span style="font-size:22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">a</span><span style="clip:rect(1.657em 1000em 2.679em -0.338em)">[<span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">1</span><span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">]</span></span></span><span style="clip:rect(1.706em 1000em 2.484em -0.387em)">0</span></span>,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">a</span><span style="clip:rect(1.657em 1000em 2.679em -0.338em)">[<span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">1</span><span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">]</span></span></span><span style="clip:rect(1.706em 1000em 2.484em -0.387em)">1</span></span>,...,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">a</span><span style="clip:rect(1.657em 1000em 2.679em -0.338em)">[<span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">1</span><span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">]</span></span></span><span style="clip:rect(1.608em 1000em 2.484em -0.436em)"><span style="display:inline-block"><span style="clip:rect(1.9em 1000em 2.484em -0.436em)">n</span>[<span style="font-size: 11px;font-family:&#39;MathJax_Main&#39;,serif">1</span><span style="font-size: 11px;font-family:&#39;MathJax_Main&#39;,serif">]</span></span>−<span style="font-size:15px;font-family:&#39;MathJax_Main&#39;,serif">1</span></span></span><span style="display:inline-block"><span style="clip:rect(1.462em 1000em 2.727em -0.436em)">]</span>T</span></span></span></span></span>. <br/> - 重复上述过程，得到每一个节点的值 <br/> - 继续将上面的结果的过程乘第二个权重矩阵W2，然后增加偏差项。<br/> - 最后，利用sigmoid函数得到结果。如果结果大于0.5，则是猫，否则不是猫。</p><h3>3.2 -L层深度神经网络模型</h3><p style="text-indent:32px">很难用以上的表示方法来表示一个L层深度神经网络模型。但是，在这里我们提供了一个简化的模型：</p><p style="text-indent: 32px; text-align: center;"><img src="/wp-content/uploads/image/20180203/1517667181127511.jpg" title="1517667181127511.jpg" alt="1517667181127511.jpg" width="545" height="394"/></p><p>模型可以被简单表述为: <em><strong><span style="font-family:宋体">[LINEAR -&gt; RELU] </span></strong></em><span style="display:inline-block"><strong><em><span style="font-size:22px;font-family:&#39;MathJax_Main&#39;,serif"><span style="display:inline-block"><span style="clip:rect(1.706em 1000em 2.484em -0.29em)">×</span></span></span></em></strong></span><em><strong> (L-1) -&gt; LINEAR -&gt; SIGMOID</strong></em></p><p>关于L层模型的结构图做出下面解释: <br/> - 输入是一个（64,64,3）的图像，然后reshape为（12288，1）。注意<strong><span style="color:red">这是一个样本的向量</span></strong>。 <br/> - 相应的向量 <span style="display:inline-block"><span style="font-size:22px;font-family:&#39;MathJax_Main&#39;,serif"><span style="display:inline-block"><span style="clip:rect(1.219em 1000em 2.727em -0.338em)">[<span style="display:inline-block"><span style="font-size:22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>0</span></span>,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>1</span></span>,...,<span style="display:inline-block"><span style="font-size: 22px;font-family:&#39;MathJax_Math-italic&#39;,serif"><span style="clip:rect(1.754em 1000em 2.484em -0.387em)">x</span>12287</span></span><span style="display:inline-block"><span style="clip:rect(1.462em 1000em 2.727em -0.436em)">]</span><sup>T</sup></span></span></span></span></span> 与权重矩阵W[1]相乘，增加偏差项<span style="font-size:22px;font-family:&#39;MathJax_Math-italic&#39;,serif">b</span>[<span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">1</span><span style="font-size: 15px;font-family:&#39;MathJax_Main&#39;,serif">]</span>。 结果被称为线性单元。<br/> - 接下了对这个线性单元做RELU。然后这个过程重复做所需要的次数。 <br/> - 最后，利用sigmoid函数得到结果。如果结果大于0.5，则是猫，否则不是猫。</p><h3>3.3 – 通用算法</h3><p>按照下面的算法顺序来创建模型:</p><p style="margin-left:24px">1.<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span>初始化参数/定义超参数<br/> 2.循环num_iterations：<br/> &nbsp;（1）正向传播<br/> &nbsp;（2）计算成本函数<br/> &nbsp;（3）反向传播<br/> &nbsp;（4）更新参数（使用参数和backprop中的梯度）<br/> 4.使用训练的参数来预测标签</p><p style="margin-left:24px">Let&#39;s now implement those two models!</p><h2>4 – 两层深度网络</h2><p><strong><span style="font-family:宋体">Question</span></strong>: 利用之前的作业中你已经完成的辅助函数安装下面的顺序来完成一个2层的深度神经网络： <em><span style="font-family:宋体">LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID</span></em>。这些函数主要是：</p><pre class="brush:python;toolbar:false">def&nbsp;initialize_parameters(n_x,&nbsp;n_h,&nbsp;n_y):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;parameters
+def&nbsp;linear_activation_forward(A_prev,&nbsp;W,&nbsp;b,&nbsp;activation):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;A,&nbsp;cache
+def&nbsp;compute_cost(AL,&nbsp;Y):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;cost
+def&nbsp;linear_activation_backward(dA,&nbsp;cache,&nbsp;activation):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;dA_prev,&nbsp;dW,&nbsp;db
+def&nbsp;update_parameters(parameters,&nbsp;grads,&nbsp;learning_rate):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;parameters</pre><pre class="brush:python;toolbar:false">###&nbsp;CONSTANTS&nbsp;DEFINING&nbsp;THE&nbsp;MODEL&nbsp;####
+n_x&nbsp;=&nbsp;12288&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;num_px&nbsp;*&nbsp;num_px&nbsp;*&nbsp;3
+n_h&nbsp;=&nbsp;7
+n_y&nbsp;=&nbsp;1
+layers_dims&nbsp;=&nbsp;(n_x,&nbsp;n_h,&nbsp;n_y)</pre><p>&nbsp;</p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;two_layer_model
+&nbsp;
+def&nbsp;two_layer_model(X,Y,layers_dims,learning_rate=0.0075,num_iterations=3000,print_cost=False):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implements&nbsp;a&nbsp;two-layer&nbsp;neural&nbsp;network:&nbsp;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;样本数据,&nbsp;of&nbsp;shape&nbsp;(n_x,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;真实标签向量&nbsp;(0-猫，1-非猫),&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;例子的数量)
+&nbsp;&nbsp;&nbsp;&nbsp;layers_dims&nbsp;--&nbsp;每一层的维度&nbsp;(n_x,&nbsp;n_h,&nbsp;n_y)
+&nbsp;&nbsp;&nbsp;&nbsp;num_iterations&nbsp;--&nbsp;number&nbsp;of&nbsp;iterations&nbsp;of&nbsp;the&nbsp;optimization&nbsp;loop
+&nbsp;&nbsp;&nbsp;&nbsp;learning_rate&nbsp;--梯度下降算法更新的学习速率
+&nbsp;&nbsp;&nbsp;&nbsp;print_cost&nbsp;--&nbsp;如果设置正确，那么每100次打印一个代价数值
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--&nbsp;一个包含有W1,W2,b1,b2的字典
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;np.random.seed(1)
+&nbsp;&nbsp;&nbsp;&nbsp;grads&nbsp;=&nbsp;{}
+&nbsp;&nbsp;&nbsp;&nbsp;costs&nbsp;=&nbsp;[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;the&nbsp;cost
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;number&nbsp;of&nbsp;examples
+&nbsp;&nbsp;&nbsp;&nbsp;(n_x,&nbsp;n_h,&nbsp;n_y)&nbsp;=&nbsp;layers_dims
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;初始化参数字典，利用调用之前设计的辅助函数
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;initialize_parameters(n_x,&nbsp;n_h,&nbsp;n_y)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;从字典参数中得到W1,&nbsp;b1,W2和b2&nbsp;。
+&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;=&nbsp;parameters[&quot;W1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;=&nbsp;parameters[&quot;b1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;=&nbsp;parameters[&quot;W2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;=&nbsp;parameters[&quot;b2&quot;]
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#梯度下降算法的循环
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i&nbsp;in&nbsp;range(0,&nbsp;num_iterations):
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;前向传播&nbsp;LINEAR&nbsp;-&gt;&nbsp;RELU&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;SIGMOID.&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#Inputs:&nbsp;&quot;X,&nbsp;W1,&nbsp;b1&quot;.&nbsp;Output:&nbsp;&quot;A1,&nbsp;cache1,&nbsp;A2,&nbsp;cache2&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;2&nbsp;lines&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A1,&nbsp;cache1&nbsp;=linear_activation_forward(X,&nbsp;W1,&nbsp;b1,&nbsp;activation&nbsp;=&nbsp;&quot;relu&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A2,&nbsp;cache2&nbsp;=&nbsp;linear_activation_forward(A1,&nbsp;W2,&nbsp;b2,&nbsp;activation&nbsp;=&nbsp;&quot;sigmoid&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;计算代价函数
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;compute_cost(A2,&nbsp;Y)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;初始化反向传播
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;-&nbsp;(np.divide(Y,&nbsp;A2)&nbsp;-&nbsp;np.divide(1&nbsp;-&nbsp;Y,&nbsp;1&nbsp;-&nbsp;A2))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;反向传播.&nbsp;Inputs:&nbsp;&quot;dA2,&nbsp;cache2,&nbsp;cache1&quot;.&nbsp;Outputs:&nbsp;&quot;dA1,&nbsp;dW2,&nbsp;db2;&nbsp;also&nbsp;dA0&nbsp;(not&nbsp;used),&nbsp;dW1,&nbsp;db1&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;2&nbsp;lines&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dA1,&nbsp;dW2,&nbsp;db2&nbsp;=&nbsp;linear_activation_backward(dA2,&nbsp;cache2,&nbsp;activation&nbsp;=&nbsp;&quot;sigmoid&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dA0,&nbsp;dW1,&nbsp;db1&nbsp;=&nbsp;linear_activation_backward(dA1,&nbsp;cache1,&nbsp;activation&nbsp;=&nbsp;&quot;relu&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Set&nbsp;grads[&#39;dWl&#39;]&nbsp;to&nbsp;dW1,&nbsp;grads[&#39;db1&#39;]&nbsp;to&nbsp;db1,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#grads[&#39;dW2&#39;]&nbsp;to&nbsp;dW2,&nbsp;grads[&#39;db2&#39;]&nbsp;to&nbsp;db2
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads[&#39;dW1&#39;]&nbsp;=&nbsp;dW1
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads[&#39;db1&#39;]&nbsp;=&nbsp;db1
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads[&#39;dW2&#39;]&nbsp;=&nbsp;dW2
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads[&#39;db2&#39;]&nbsp;=&nbsp;db2
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;更新参数
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;update_parameters(parameters,&nbsp;grads,&nbsp;learning_rate)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Retrieve&nbsp;W1,&nbsp;b1,&nbsp;W2,&nbsp;b2&nbsp;from&nbsp;parameters
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;=&nbsp;parameters[&quot;W1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;=&nbsp;parameters[&quot;b1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;=&nbsp;parameters[&quot;W2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;=&nbsp;parameters[&quot;b2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;每100个训练样本打印一次代价值
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;100&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(&quot;Cost&nbsp;after&nbsp;iteration&nbsp;{}:&nbsp;{}&quot;.format(i,&nbsp;np.squeeze(cost)))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;100&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;costs.append(cost)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;画出代价函数图像
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;plt.plot(np.squeeze(costs))
+&nbsp;&nbsp;&nbsp;&nbsp;plt.ylabel(&#39;cost&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.xlabel(&#39;iterations&nbsp;(per&nbsp;tens)&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.title(&quot;Learning&nbsp;rate&nbsp;=&quot;&nbsp;+&nbsp;str(learning_rate))
+&nbsp;&nbsp;&nbsp;&nbsp;plt.show()
+&nbsp;&nbsp;&nbsp;
+return&nbsp;parameters#返回参数</pre><p>训练集训练：</p><pre class="brush:python;toolbar:false">parameters=two_layer_model(train_x,train_y,layers_dims=(n_x,n_h,n_y),num_iterations=2500,print_cost=True)</pre><p style="text-align: center;"><span style="font-size:14px;font-family: 等线"></span><img src="/wp-content/uploads/image/20180203/1517667284125621.jpg" title="1517667284125621.jpg" alt="3.jpg"/></p><p>测试集测试：</p><p>predictions_test = predict(test_x, test_y, parameters)</p><p>精确度为<strong><span style="color:red">72%</span></strong></p><p>注意：您可能会注意到，以较少的迭代（例如1500）运行模型可以提高测试集的准确性。 这叫做“早停”，我们将在下一个课程中进行讨论。 提前停止是防止过拟合的一种方法。</p><p>恭喜！ 看来你的2层神经网络比逻辑回归实现（70％，第二周作业数值）有更好的表现（72％）。 让我们看看你是否能用L层模型做得更好。</p><h2>5 – L层深度网络</h2><p><strong><span style="font-family:宋体">Question</span></strong>: 利用之前的作业中你已经完成的辅助函数安装下面的顺序来完成一个L层的深度神经网络： <em><span style="font-family:宋体">LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID</span></em>。这些函数主要是：</p><p>&nbsp;<em><span style="font-family:宋体">[LINEAR -&gt; RELU]</span></em><span style="display:inline-block"><em><span style="font-size:19px;font-family: &#39;STIXMathJax_Main&#39;,serif"><span style="display:inline-block"><span style="clip:rect(1.852em, 1000.61em, 2.763em, -1000em)">×</span></span></span></em></span><em>×</em><em><span style="font-family:宋体">(L-1) -&gt; LINEAR -&gt; SIGMOID</span></em>. The functions you may need and their inputs are:</p><pre class="brush:python;toolbar:false">def&nbsp;initialize_parameters_deep(layer_dims):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;parameters
+def&nbsp;L_model_forward(X,&nbsp;parameters):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;AL,&nbsp;caches
+def&nbsp;compute_cost(AL,&nbsp;Y):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;cost
+def&nbsp;L_model_backward(AL,&nbsp;Y,&nbsp;caches):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;grads
+def&nbsp;update_parameters(parameters,&nbsp;grads,&nbsp;learning_rate):
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;parameters</pre><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;L_layer_model
+def&nbsp;L_layer_model(X,&nbsp;Y,&nbsp;layers_dims,&nbsp;learning_rate&nbsp;=&nbsp;0.0075,&nbsp;num_iterations=3000,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_cost=False):#lr&nbsp;was&nbsp;0.009
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implements&nbsp;a&nbsp;L-layer&nbsp;neural&nbsp;network:&nbsp;[LINEAR-&gt;RELU]*(L-1)-&gt;LINEAR-&gt;SIGMOID.
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;数据，numpy数组的尺寸(number&nbsp;of&nbsp;examples,&nbsp;num_px&nbsp;*&nbsp;num_px&nbsp;*&nbsp;3)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;真实数据的标签&nbsp;(0-猫，1-非猫),&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;例子的数量)
+&nbsp;&nbsp;&nbsp;&nbsp;layers_dims&nbsp;--&nbsp;输入层尺寸和每一层尺寸所包含的列表&nbsp;(数值为number&nbsp;of&nbsp;layers&nbsp;+&nbsp;1).
+&nbsp;&nbsp;&nbsp;&nbsp;learning_rate&nbsp;--梯度下降算法的学习速率
+&nbsp;&nbsp;&nbsp;&nbsp;num_iterations&nbsp;--&nbsp;优化循环的迭代次数
+&nbsp;&nbsp;&nbsp;&nbsp;print_cost&nbsp;--如果代码书写正确，每100次打印一个代价数据。
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--通过模型学习到的参数，用来做预测。
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;np.random.seed(1)
+&nbsp;&nbsp;&nbsp;&nbsp;costs&nbsp;=&nbsp;[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;keep&nbsp;track&nbsp;of&nbsp;cost
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;初始化参数。
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;initialize_parameters_deep(layers_dims)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;梯度下降的循环算法
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i&nbsp;in&nbsp;range(0,&nbsp;num_iterations):
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;前向传播:&nbsp;[LINEAR&nbsp;-&gt;&nbsp;RELU]*(L-1)&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;SIGMOID.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AL,&nbsp;caches&nbsp;=&nbsp;L_model_forward(X,&nbsp;parameters)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;计算代价
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;compute_cost(AL,&nbsp;Y)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;反向传播
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads&nbsp;=&nbsp;L_model_backward(AL,&nbsp;Y,&nbsp;caches)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;更新参数
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;1&nbsp;line&nbsp;of&nbsp;code)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;update_parameters(parameters,&nbsp;grads,&nbsp;learning_rate)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;每100个训练结果打印出代价
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;100&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;(&quot;迭代后的代价&nbsp;%i:&nbsp;%f&quot;&nbsp;%(i,&nbsp;cost))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;100&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;costs.append(cost)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;plot&nbsp;the&nbsp;cost
+&nbsp;&nbsp;&nbsp;&nbsp;plt.plot(np.squeeze(costs))
+&nbsp;&nbsp;&nbsp;&nbsp;plt.ylabel(&#39;cost&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.xlabel(&#39;iterations&nbsp;(per&nbsp;tens)&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.title(&quot;learning&nbsp;rate&nbsp;=&quot;&nbsp;+&nbsp;str(learning_rate))
+&nbsp;&nbsp;&nbsp;&nbsp;plt.show()
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;parameters</pre><p>训练集做训练：</p><pre class="brush:python;toolbar:false">parameters=L_layer_model(train_x,train_y,layers_dims,num_iterations=2500,print_cost=True)</pre><p style="text-align: center;"><img src="/wp-content/uploads/image/20180203/1517667505604757.png" title="1517667505604757.png" alt="1517667505604757.png" width="423" height="344"/></p><p>训练集预测准确度代码：</p><pre class="brush:python;toolbar:false">pred_train&nbsp;=&nbsp;predict(train_x,&nbsp;train_y,&nbsp;parameters)</pre><pre>准确度：0.985645933014</pre><p><br/></p><p>测试集预测准确度代码：</p><pre class="brush:python;toolbar:false">pred_test&nbsp;=&nbsp;predict(test_x,&nbsp;test_y,&nbsp;parameters)</pre><p>准确度：<span style="color: #FF0000;"><strong>0.8</strong></span></p><p style="text-indent:32px">恭喜！ 看起来你的5层神经网络比同样的测试集上的2层神经网络（72％）有更好的性能（80％）。</p><p style="text-indent:32px">这对于这个任务来说是很好的表现。 不错的工作！</p><p style="text-indent:32px">在下一课“改善深度神经网络”中，您将学习如何通过系统地搜索更好的超参数（learning_rate，layers_dims，num_iterations，以及在下一课程中学习的其他参数）来获得更高的准确性。</p><h2>6 – 结果分析</h2><p>首先，我们来看一些L层模型中标记不正确的例子。</p><p style="text-align:center"><img src="/wp-content/uploads/image/20180203/1517667623747031.png" title="1517667623747031.png" alt="1517667623747031.png" width="670" height="74"/></p><p>模型往往做得不好的几种类型的图像包括：</p><ol style="list-style-type: decimal;" class=" list-paddingleft-2"><li><p>猫身体在一个不寻常的位置</p></li><li><p>猫出现在相似颜色的背景下</p></li><li><p>不寻常的猫的颜色和物种</p></li><li><p>相机角度问题</p></li><li><p>图片的亮度问题</p></li><li><p>比例变化（猫的图像非常大或很小）</p></li></ol><p><br/></p>
