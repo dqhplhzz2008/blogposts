@@ -1,0 +1,15 @@
+---
+ID: 3475
+post_title: Python chapter 5 learning notes
+post_name: python-chapter-5-learning-notes
+author: 小奥
+post_date: 2017-10-13 19:56:35
+layout: post
+link: >
+  http://www.yushuai.me/2017/10/13/3475.html
+published: true
+tags: [ ]
+categories:
+  - Python
+---
+<ol class=" list-paddingleft-2" style="list-style-type: decimal;"><li><p><span style="font-size: 15px">&nbsp;</span><span style="font-size: 15px">一个简单例子</span></p></li></ol><p style=";font-size:15px"><span style="font-family:微软雅黑">&nbsp;&nbsp;&nbsp; </span><span style="font-family:微软雅黑">在</span><span style="font-family:Calibri">python</span><span style="font-family:微软雅黑">中，检查是否相等时，大小写不同默认是不相等的。如果需要不考虑大小写，则可把他们都统一转换成小写。</span></p><p style=";font-family:微软雅黑;font-size:15px">&nbsp;&nbsp;&nbsp; 检查多个条件时有以下两种情况：</p><ol class=" list-paddingleft-2" style="list-style-type: decimal;"><ol class=" list-paddingleft-2" style="list-style-type: lower-alpha;"><li><p><span style="font-size: 15px">必须同时符合多种情况：利用</span><span style="font-size: 15px">and</span><span style="font-size: 15px">语句。例如：<span style="font-family: Calibri; font-size: 15px; font-style: italic;">if (age_0&gt;21) and (age_1&lt;=40)</span></span></p></li><li><p><span style="font-size: 15px"><span style="font-size: 15px; font-family: 微软雅黑;">多种情况符合其一即可：用</span><span style="font-size: 15px; font-family: 微软雅黑;">or</span><span style="font-size: 15px; font-family: 微软雅黑;">。例如：</span></span></p></li></ol></ol><p style=";margin-left:.75in;font-family:Calibri;font-size:15px"><span style="font-style:italic">if (age_0&lt;18) or (age_1&gt;60)</span></p><p style=";font-family:微软雅黑;font-size:15px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;如果你希望检查一个元素是否存在于一个列表中，可以使用<span style="font-style:italic">in</span>，如例所示：</p><p style=";margin-left:.375in;font-family:Calibri;font-size:15px"><span style="font-style:italic">&gt;&gt;&gt; </span><span style="font-style:italic">&nbsp;requested_toppings=[&#39;mushrooms&#39;,&#39;onions&#39;,&#39;pinepple&#39;]</span></p><p style=";margin-left:.375in;font-family:Calibri;font-size:15px"><span style="font-style:italic">&gt;&gt;&gt; </span><span style="font-style:italic">&#39;mushrooms&#39; </span><span style="font-weight: bold;font-style:italic">in</span><span style="font-style:italic"> requested_toppings</span></p><p style=";font-size:15px"><span style="font-family:微软雅黑">屏幕显示</span><span style="font-family:Calibri">T</span><span style="font-family:微软雅黑">ure</span><span style="font-family:微软雅黑">。</span></p><p style=";font-family:微软雅黑;font-size:15px">如果你希望检查一个元素不存在于一个列表中，可以使用 not in。如例所示：</p><p style=";font-family:Calibri;font-size:15px">&gt;&gt;&gt; &#39;apple&#39; not in requested_toppings</p><p style=";font-size:15px"><span style="font-family:微软雅黑">答案为</span><span style="font-family:Calibri">T</span><span style="font-family:Calibri">rue</span><span style="font-family:微软雅黑">。</span></p>
