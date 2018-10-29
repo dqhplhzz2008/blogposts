@@ -1,0 +1,350 @@
+---
+ID: 3601
+post_title: >
+  吴恩达深度学习课程
+  DeepLearning.ai
+  编程作业（2-1）Part.2
+post_name: '%e5%90%b4%e6%81%a9%e8%be%be%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e8%af%be%e7%a8%8b-deeplearning-ai-%e7%bc%96%e7%a8%8b%e4%bd%9c%e4%b8%9a%ef%bc%882-2%ef%bc%89'
+author: 小奥
+post_date: 2018-02-07 00:02:26
+layout: post
+link: >
+  http://www.yushuai.me/2018/02/07/3601.html
+published: true
+tags:
+  - Python
+  - 人工智能
+  - 神经网络
+categories:
+  - Deep Learning
+---
+<p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="font-size:32px;font-family:宋体">正则化</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><span style="font-size:16px;font-family:宋体">Let&#39;s first import the packages you are going to use.</span></p><pre class="brush:python;toolbar:false">#&nbsp;import&nbsp;packages
+import&nbsp;numpy&nbsp;as&nbsp;np
+import&nbsp;matplotlib.pyplot&nbsp;as&nbsp;plt
+from&nbsp;reg_utils&nbsp;import&nbsp;sigmoid,&nbsp;relu,&nbsp;plot_decision_boundary
+from&nbsp;reg_utils&nbsp;import&nbsp;initialize_parameters,&nbsp;load_2D_dataset,&nbsp;predict_dec
+from&nbsp;reg_utils&nbsp;import&nbsp;compute_cost,&nbsp;predict,&nbsp;forward_propagation
+from&nbsp;reg_utils&nbsp;import&nbsp;backward_propagation,&nbsp;update_parameters
+import&nbsp;sklearn
+import&nbsp;sklearn.datasets
+import&nbsp;scipy.io
+from&nbsp;testCases&nbsp;import&nbsp;*
+%matplotlib&nbsp;inline
+plt.rcParams[&#39;figure.figsize&#39;]&nbsp;=&nbsp;(7.0,&nbsp;4.0)&nbsp;#&nbsp;set&nbsp;default&nbsp;size&nbsp;of&nbsp;plots
+plt.rcParams[&#39;image.interpolation&#39;]&nbsp;=&nbsp;&#39;nearest&#39;
+plt.rcParams[&#39;image.cmap&#39;]&nbsp;=&nbsp;&#39;gray&#39;</pre><p><strong><span style="font-family:等线">Problem Statement</span></strong>: 假设你刚刚被法国足球公司聘为AI专家。 他们希望你推荐法国守门员应该踢球的位置，这样法国队的球员用头击出。</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517937477262038.png" title="1517937477262038.png" alt="1517937477262038.png" width="670" height="425"/></p><p>守门员将球踢向空中，各队的队员们正在拼命用头撞球，以下二维数据集为他们他们提供的法国过去10场比赛情况。</p><p>运行：</p><pre class="brush:python;toolbar:false">train_X,&nbsp;train_Y,&nbsp;test_X,&nbsp;test_Y&nbsp;=&nbsp;load_2D_dataset()
+#若运行出现：c&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;211)&nbsp;not&nbsp;acceptable
+#as&nbsp;a&nbsp;color&nbsp;sequence&nbsp;for&nbsp;x&nbsp;with&nbsp;size&nbsp;211,&nbsp;y&nbsp;with&nbsp;size&nbsp;211
+#请在载入的reg_utils.py中寻找到
+#plt.scatter(train_X[0,&nbsp;:],&nbsp;train_X[1,&nbsp;:],&nbsp;
+#c=train_Y,&nbsp;s=40,&nbsp;cmap=plt.cm.Spectral)
+#将c=train_Y改为c=np.squeeze(train_Y)即可</pre><p>得到结果图：</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517937527615635.jpg" title="1517937527615635.jpg" alt="2.jpg"/></p><p>每个点对应于足球运动员在足球场左侧击球之后，用头将球击中的足球场上的位置。</p><p>如果这个点是蓝色的，这意味着这个法国球员设法用他/她的头击球</p><p>如果这个点是红色的，这意味着另一个队的球员用头撞球</p><p>你的目标：使用深度学习模式来找到守门员踢球的场地。</p><p>数据集的分析：这个数据集有点嘈杂，但是看起来像是左上角（蓝色）和右下角（红色）分开的对角线，效果很好。</p><p>你将首先尝试一个非正则化的模型。 然后，您将学习如何正则化，并决定选择哪种模式来解决法国足球公司的问题。</p><h2>1 – 非正则化模型</h2><p>您将使用以下神经网络（以下已为您实施）。 这个模型可以这样使用：</p><ul class=" list-paddingleft-2"><li><p>在 <em><span style="font-family:等线">regularization mode</span></em> -- 通过将lambd输入设置为非零值。 我们使用“lambd”而不是“lambda”，因为“lambda”是Python中的保留关键字。</p></li><li><p>in <em><span style="font-family:      等线">dropout mode</span></em> -- 通过将keep_prob设置为小于1的值</p></li></ul><p><span style="font-size:14px;font-family: 等线">您将首先尝试没有正规化的模型。 然后，你将执行：</span></p><ul class=" list-paddingleft-2"><li><p><em><span style="font-family:等线">L2 regularization</span></em> -- functions: &quot;<code><span style="font-size:16px">compute_cost_with_regularization()</span></code>&quot; and &quot;<code><span style="font-size:16px">backward_propagation_with_regularization()</span></code>&quot;</p></li><li><p><em><span style="font-family:等线">Dropout</span></em> -- &nbsp; &nbsp; &nbsp;functions: &quot;<code><span style="font-size:16px">forward_propagation_with_dropout()</span></code>&quot; and &quot;<code><span style="font-size:16px">backward_propagation_with_dropout()</span></code>&quot;</p></li></ul><p>在每个部分中，您将使用正确的输入运行此模型，以便调用您实施的功能。 看看下面的代码，以熟悉模型。</p><pre class="brush:python;toolbar:false">def&nbsp;model(X,&nbsp;Y,&nbsp;learning_rate&nbsp;=&nbsp;0.3,&nbsp;num_iterations&nbsp;=&nbsp;30000,
+print_cost&nbsp;=&nbsp;True,&nbsp;lambd&nbsp;=&nbsp;0,&nbsp;keep_prob&nbsp;=&nbsp;1):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+Implements&nbsp;a&nbsp;three-layer&nbsp;neural&nbsp;network:
+LINEAR-&gt;RELU-&gt;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+X&nbsp;--&nbsp;input&nbsp;data,&nbsp;of&nbsp;shape&nbsp;(input&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+Y&nbsp;--&nbsp;true&nbsp;&quot;label&quot;&nbsp;vector&nbsp;(1&nbsp;for&nbsp;blue&nbsp;dot&nbsp;/&nbsp;0&nbsp;for&nbsp;red&nbsp;dot),&nbsp;
+of&nbsp;shape&nbsp;(output&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+learning_rate&nbsp;--&nbsp;learning&nbsp;rate&nbsp;of&nbsp;the&nbsp;optimization
+num_iterations&nbsp;--&nbsp;number&nbsp;of&nbsp;iterations&nbsp;of&nbsp;the&nbsp;optimization&nbsp;loop
+print_cost&nbsp;--&nbsp;If&nbsp;True,&nbsp;print&nbsp;the&nbsp;cost&nbsp;every&nbsp;10000&nbsp;iterations
+lambd&nbsp;--&nbsp;regularization&nbsp;hyperparameter,&nbsp;scalar
+keep_prob&nbsp;-&nbsp;probability&nbsp;of&nbsp;keeping&nbsp;a&nbsp;neuron&nbsp;active&nbsp;during&nbsp;drop-out,&nbsp;scalar.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+parameters--parameters&nbsp;learned&nbsp;by&nbsp;the&nbsp;model.&nbsp;They&nbsp;can&nbsp;then&nbsp;be&nbsp;
+used&nbsp;to&nbsp;predict.
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;grads&nbsp;=&nbsp;{}
+&nbsp;&nbsp;&nbsp;&nbsp;costs&nbsp;=&nbsp;[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;the&nbsp;cost
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;number&nbsp;of&nbsp;examples
+&nbsp;&nbsp;&nbsp;&nbsp;layers_dims&nbsp;=&nbsp;[X.shape[0],&nbsp;20,&nbsp;3,&nbsp;1]
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Initialize&nbsp;parameters&nbsp;dictionary.
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;initialize_parameters(layers_dims)
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Loop&nbsp;(gradient&nbsp;descent)
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i&nbsp;in&nbsp;range(0,&nbsp;num_iterations):
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Forward&nbsp;propagation:&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#LINEAR&nbsp;-&gt;&nbsp;RELU&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;RELU&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;SIGMOID.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;keep_prob&nbsp;==&nbsp;1:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a3,&nbsp;cache&nbsp;=&nbsp;forward_propagation(X,&nbsp;parameters)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;keep_prob&nbsp;&lt;&nbsp;1:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a3,&nbsp;cache&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;forward_propagation_with_dropout(X,parameters,&nbsp;keep_prob)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Cost&nbsp;function
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;lambd&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;compute_cost(a3,&nbsp;Y)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;compute_cost_with_regularization(a3,&nbsp;Y,&nbsp;parameters,&nbsp;lambd)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Backward&nbsp;propagation.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(lambd==0&nbsp;or&nbsp;keep_prob==1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#it&nbsp;is&nbsp;possible&nbsp;to&nbsp;use&nbsp;both&nbsp;L2&nbsp;regularization&nbsp;and&nbsp;dropout,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;but&nbsp;this&nbsp;assignment&nbsp;will&nbsp;only&nbsp;explore&nbsp;one&nbsp;at&nbsp;a&nbsp;time
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;lambd&nbsp;==&nbsp;0&nbsp;and&nbsp;keep_prob&nbsp;==&nbsp;1:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads&nbsp;=&nbsp;backward_propagation(X,&nbsp;Y,&nbsp;cache)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;lambd&nbsp;!=&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads=backward_propagation_with_regularization(X,Y,cache,lambd)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;keep_prob&nbsp;&lt;&nbsp;1:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;grads&nbsp;=&nbsp;backward_propagation_with_dropout(X,&nbsp;Y,&nbsp;cache,&nbsp;keep_prob)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Update&nbsp;parameters.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;=&nbsp;update_parameters(parameters,&nbsp;grads,&nbsp;learning_rate)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Print&nbsp;the&nbsp;loss&nbsp;every&nbsp;10000&nbsp;iterations
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;10000&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(&quot;Cost&nbsp;after&nbsp;iteration&nbsp;{}:&nbsp;{}&quot;.format(i,&nbsp;cost))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;print_cost&nbsp;and&nbsp;i&nbsp;%&nbsp;1000&nbsp;==&nbsp;0:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;costs.append(cost)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;plot&nbsp;the&nbsp;cost
+&nbsp;&nbsp;&nbsp;&nbsp;plt.plot(costs)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.ylabel(&#39;cost&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.xlabel(&#39;iterations&nbsp;(x1,000)&#39;)
+&nbsp;&nbsp;&nbsp;&nbsp;plt.title(&quot;Learning&nbsp;rate&nbsp;=&quot;&nbsp;+&nbsp;str(learning_rate))
+&nbsp;&nbsp;&nbsp;&nbsp;plt.show()
+&nbsp;&nbsp;&nbsp;
+return&nbsp;parameters</pre><p style="text-indent:28px">让我们在没有任何正则化情况下训练模型，，并观察训练集/测试集的准确性。</p><pre class="brush:python;toolbar:false">parameters&nbsp;=&nbsp;model(train_X,&nbsp;train_Y)
+print&nbsp;(&quot;On&nbsp;the&nbsp;training&nbsp;set:&quot;)
+predictions_train&nbsp;=&nbsp;predict(train_X,&nbsp;train_Y,&nbsp;parameters)
+print&nbsp;(&quot;On&nbsp;the&nbsp;test&nbsp;set:&quot;)
+predictions_test&nbsp;=&nbsp;predict(test_X,&nbsp;test_Y,&nbsp;parameters)</pre><p>迭代结果：</p><p>Cost after iteration 0: 0.6557412523481002</p><p>Cost after iteration 10000: 0.1632998752572419</p><p>Cost after iteration 20000: 0.13851642423239133</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517937856123776.jpg" title="1517937856123776.jpg" alt="3.jpg"/></p><p>On the training set:</p><p>Accuracy: 0.947867298578</p><p>On the test set:</p><p>Accuracy: 0.915</p><p>训练精度为94.8％，测试精度为91.5％。 这是基准模型（您将观察正则化对此模型的影响）。 运行以下代码来绘制模型的决策边界。</p><pre class="brush:python;toolbar:false">plt.title(&quot;Model&nbsp;without&nbsp;regularization&quot;)
+axes&nbsp;=&nbsp;plt.gca()
+axes.set_xlim([-0.75,0.40])
+axes.set_ylim([-0.75,0.65])
+plot_decision_boundary(lambda&nbsp;x:predict_dec(parameters,x.T),train_X,train_Y)</pre><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517937900233472.jpg" title="1517937900233472.jpg" alt="1517937900233472.jpg" width="612" height="339"/></p><p>很明显已经过拟合了。接下来采用两种正则化来测试一下。</p><h2>2 - L2 正则化</h2><p><strong><img src="/wp-content/uploads/image/20180207/1517937960389335.jpg" title="1517937960389335.jpg" alt="1517937960389335.jpg" width="637" height="123"/></strong></p><p>下面来做修改。</p><p><strong><span style="font-family:等线">Exercise</span></strong>: 执行 <code><span style="font-size:16px">compute_cost_with_regularization()</span></code> 来计算式（2）给的计算代价的方式。</p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;compute_cost_with_regularization
+&nbsp;
+def&nbsp;compute_cost_with_regularization(A3,&nbsp;Y,&nbsp;parameters,&nbsp;lambd):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+Implement&nbsp;the&nbsp;cost&nbsp;function&nbsp;with&nbsp;L2&nbsp;regularization.&nbsp;See&nbsp;formula&nbsp;(2)&nbsp;above.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;A3&nbsp;--&nbsp;post-activation,&nbsp;output&nbsp;of&nbsp;forward&nbsp;propagation,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;of&nbsp;shape&nbsp;(output&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;&quot;true&quot;&nbsp;labels&nbsp;vector,&nbsp;of&nbsp;shape&nbsp;(output&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--&nbsp;python&nbsp;dictionary&nbsp;containing&nbsp;parameters&nbsp;of&nbsp;the&nbsp;model
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;-&nbsp;value&nbsp;of&nbsp;the&nbsp;regularized&nbsp;loss&nbsp;function&nbsp;(formula&nbsp;(2))
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;Y.shape[1]
+&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;=&nbsp;parameters[&quot;W1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;=&nbsp;parameters[&quot;W2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W3&nbsp;=&nbsp;parameters[&quot;W3&quot;]
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;cross_entropy_cost&nbsp;=&nbsp;compute_cost(A3,&nbsp;Y)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;This&nbsp;gives&nbsp;you&nbsp;the&nbsp;cross-entropy&nbsp;part&nbsp;of&nbsp;the&nbsp;cost
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;L2_regularization_cost&nbsp;=&nbsp;(np.sum(np.square(W1))&nbsp;+&nbsp;np.sum(&nbsp;np.square(W2))&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;np.sum(np.square(W3)))&nbsp;*&nbsp;lambd&nbsp;/&nbsp;(2&nbsp;*&nbsp;m)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODER&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;cross_entropy_cost&nbsp;+&nbsp;L2_regularization_cost
+&nbsp;&nbsp;&nbsp;
+return&nbsp;cost</pre><p>测试一下：</p><pre class="brush:python;toolbar:false">A3,&nbsp;Y_assess,&nbsp;parameters&nbsp;=&nbsp;compute_cost_with_regularization_test_case()
+&nbsp;
+print(&quot;cost=&quot;
++str(compute_cost_with_regularization(A3,Y_assess,parameters,lambd=0.1)))</pre><p>结果为：</p><p>cost = 1.78648594516</p><p>当然，因为你改变了成本，你也必须改变后向传播！ 所有的梯度都必须计算这个新的成本。</p><p><strong><span style="font-family:等线">Exercise</span></strong>: Implement the changes needed in backward propagation to take into account regularization. The changes only concern dW1, dW2 and dW3. For each, you have to add the regularization term&#39;s gradient</p><p># GRADED FUNCTION: backward_propagation_with_regularization</p><p>&nbsp;</p><pre class="brush:python;toolbar:false">def&nbsp;backward_propagation_with_regularization(X,&nbsp;Y,&nbsp;cache,&nbsp;lambd):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+Implements&nbsp;the&nbsp;backward&nbsp;propagation&nbsp;of&nbsp;our&nbsp;baseline&nbsp;model&nbsp;to&nbsp;
+which&nbsp;we&nbsp;added&nbsp;an&nbsp;L2&nbsp;regularization.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;input&nbsp;dataset,&nbsp;of&nbsp;shape&nbsp;(input&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;&quot;true&quot;&nbsp;labels&nbsp;vector,&nbsp;of&nbsp;shape&nbsp;(output&nbsp;size,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;--&nbsp;cache&nbsp;output&nbsp;from&nbsp;forward_propagation()
+&nbsp;&nbsp;&nbsp;&nbsp;lambd&nbsp;--&nbsp;regularization&nbsp;hyperparameter,&nbsp;scalar
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;--&nbsp;A&nbsp;dictionary&nbsp;with&nbsp;the&nbsp;gradients&nbsp;with&nbsp;respect&nbsp;to&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;each&nbsp;parameter,&nbsp;activation&nbsp;and&nbsp;pre-activation&nbsp;variables
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]
+&nbsp;&nbsp;&nbsp;&nbsp;(Z1,&nbsp;A1,&nbsp;W1,&nbsp;b1,&nbsp;Z2,&nbsp;A2,&nbsp;W2,&nbsp;b2,&nbsp;Z3,&nbsp;A3,&nbsp;W3,&nbsp;b3)&nbsp;=&nbsp;cache
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dZ3&nbsp;=&nbsp;A3&nbsp;-&nbsp;Y
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;dW3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ3,&nbsp;A2.T)&nbsp;+&nbsp;lambd/m*W3
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;db3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ3,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;np.dot(W3.T,&nbsp;dZ3)
+&nbsp;&nbsp;&nbsp;&nbsp;dZ2&nbsp;=&nbsp;np.multiply(dA2,&nbsp;np.int64(A2&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;dW2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ2,&nbsp;A1.T)&nbsp;+&nbsp;lambd/m*W2
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;db2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ2,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dA1&nbsp;=&nbsp;np.dot(W2.T,&nbsp;dZ2)
+&nbsp;&nbsp;&nbsp;&nbsp;dZ1&nbsp;=&nbsp;np.multiply(dA1,&nbsp;np.int64(A1&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;dW1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ1,&nbsp;X.T)&nbsp;+&nbsp;lambd/m*W1
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;db1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ1,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;=&nbsp;{&quot;dZ3&quot;:&nbsp;dZ3,&nbsp;&quot;dW3&quot;:&nbsp;dW3,&nbsp;&quot;db3&quot;:&nbsp;db3,&quot;dA2&quot;:&nbsp;dA2,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dZ2&quot;:&nbsp;dZ2,&nbsp;&quot;dW2&quot;:&nbsp;dW2,&nbsp;&quot;db2&quot;:&nbsp;db2,&nbsp;&quot;dA1&quot;:&nbsp;dA1,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dZ1&quot;:&nbsp;dZ1,&nbsp;&quot;dW1&quot;:&nbsp;dW1,&nbsp;&quot;db1&quot;:&nbsp;db1}
+&nbsp;&nbsp;&nbsp;
+return&nbsp;gradients</pre><p style="text-indent:28px">测试一下：</p><pre class="brush:python;toolbar:false">X_assess,&nbsp;Y_assess,&nbsp;cache&nbsp;=&nbsp;backward_propagation_with_regularization_test_case()
+&nbsp;
+grads&nbsp;=&nbsp;backward_propagation_with_regularization
+(X_assess,&nbsp;Y_assess,&nbsp;cache,&nbsp;lambd&nbsp;=&nbsp;0.7)
+print&nbsp;(&quot;dW1&nbsp;=&nbsp;&quot;+&nbsp;str(grads[&quot;dW1&quot;]))
+print&nbsp;(&quot;dW2&nbsp;=&nbsp;&quot;+&nbsp;str(grads[&quot;dW2&quot;]))
+print&nbsp;(&quot;dW3&nbsp;=&nbsp;&quot;+&nbsp;str(grads[&quot;dW3&quot;]))</pre><p>结果为：</p><table><tbody><tr class="firstRow"><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><strong><span style="font-size:16px;font-family:宋体">dW1</span></strong> </p></td><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><span style="font-size:16px;font-family:宋体">[[-0.25604646 0.12298827 -0.28297129] [-0.17706303 &nbsp; 0.34536094 -0.4410571 ]] </span></p></td></tr><tr><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><strong><span style="font-size:16px;font-family:宋体">dW2</span></strong> </p></td><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><span style="font-size:16px;font-family:宋体">[[ 0.79276486 0.85133918] [-0.0957219 -0.01720463] &nbsp; [-0.13100772 -0.03750433]] </span></p></td></tr><tr><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><strong><span style="font-size:16px;font-family:宋体">dW3</span></strong> </p></td><td style="padding:1px 1px 1px 1px"><p style="text-align:left"><span style="font-size:16px;font-family:宋体">[[-1.77691347 -0.11832879 -0.09397446]] </span></p></td></tr></tbody></table><p>现在让我们用L2正则化（λ= 0.7）运行模型。 model（）函数将调用：</p><p>compute_cost_with_regularization而不是compute_cost</p><p>backward_propagation_with_regularization而不是backward_propagation</p><p>代码如下：</p><pre class="brush:python;toolbar:false">parameters&nbsp;=&nbsp;model(train_X,&nbsp;train_Y,&nbsp;lambd&nbsp;=&nbsp;0.7)
+print&nbsp;(&quot;On&nbsp;the&nbsp;train&nbsp;set:&quot;)
+predictions_train&nbsp;=&nbsp;predict(train_X,&nbsp;train_Y,&nbsp;parameters)
+print&nbsp;(&quot;On&nbsp;the&nbsp;test&nbsp;set:&quot;)
+predictions_test&nbsp;=&nbsp;predict(test_X,&nbsp;test_Y,&nbsp;parameters)</pre><p>结果如下：</p><p>Cost after iteration 0: 0.6974484493131264</p><p>Cost after iteration 10000: 0.2684918873282239</p><p>Cost after iteration 20000: 0.2680916337127301</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517938215176719.jpg" title="1517938215176719.jpg" alt="6.jpg"/></p><p>On the train set:</p><p>Accuracy: 0.938388625592</p><p>On the test set:</p><p>Accuracy: 0.93</p><p>我们看出精确度又有所提高，下面看边界图像，判断看是否过拟合？</p><p>代码如下：</p><pre class="brush:python;toolbar:false">plt.title(&quot;Model&nbsp;with&nbsp;L2-regularization&nbsp;by&nbsp;yushuai.me&quot;)
+axes&nbsp;=&nbsp;plt.gca()
+axes.set_xlim([-0.75,0.40])
+axes.set_ylim([-0.75,0.65])
+plot_decision_boundary
+(lambda&nbsp;x:predict_dec(parameters,x.T),train_X,&nbsp;train_Y)</pre><p>图像如下：</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517938268125086.jpg" title="1517938268125086.jpg" alt="7.jpg"/></p><p>可以看出，过拟合已经得到很大程度减轻。</p><p>L2正则化实际上在做什么？</p><p>L2规则化依赖于这样的假设，即具有小权重的模型比具有大权重的模型简单。</p><p>因此，通过惩罚成本函数中权重的平方值，可以将所有权重驱动到较小的值。</p><p>但对于大权重的成本来说代价太大了，这将导致一个更加平滑的模型，它其中输出随着输入改变变化更慢。</p><p>L2正则化对以下内容的影响：</p><p>成本计算：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 正则化术语被添加到成本中</p><p>反向传播功能：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 在权重矩阵的梯度中有额外的术语</p><p>&nbsp;权重变小（“权重衰减”）：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 权重被推到较小的值。</p><h2>3 - Dropout</h2><p style="text-indent:28px">最后，Dropout（随机失活）是一种广泛使用的正则化技术，特别是在深度学习中，它在每次迭代中随机关闭一些神经元。</p><p>代码如下：</p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;forward_propagation_with_dropout
+def&nbsp;forward_propagation_with_dropout(X,&nbsp;parameters,&nbsp;keep_prob&nbsp;=&nbsp;0.5):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implements&nbsp;the&nbsp;forward&nbsp;propagation:&nbsp;
+LINEAR&nbsp;-&gt;&nbsp;RELU&nbsp;+&nbsp;DROPOUT&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;RELU&nbsp;+&nbsp;DROPOUT&nbsp;-&gt;&nbsp;LINEAR&nbsp;-&gt;&nbsp;SIGMOID.
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;input&nbsp;dataset,&nbsp;of&nbsp;shape&nbsp;(2,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--&nbsp;
+python&nbsp;dictionary&nbsp;containing&nbsp;your&nbsp;parameters&nbsp;
+&quot;W1&quot;,&nbsp;&quot;b1&quot;,&nbsp;&quot;W2&quot;,&nbsp;&quot;b2&quot;,&nbsp;&quot;W3&quot;,&nbsp;&quot;b3&quot;:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(20,&nbsp;2)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(20,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(3,&nbsp;20)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(3,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W3&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;3)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b3&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;keep_prob&nbsp;-&nbsp;
+probability&nbsp;of&nbsp;keeping&nbsp;a&nbsp;neuron&nbsp;active&nbsp;during&nbsp;drop-out,&nbsp;scalar
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;A3&nbsp;--&nbsp;last&nbsp;activation&nbsp;value,&nbsp;output&nbsp;of&nbsp;the&nbsp;forward&nbsp;propagation,&nbsp;
+of&nbsp;shape&nbsp;(1,1)
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;--&nbsp;tuple,&nbsp;information&nbsp;stored&nbsp;for&nbsp;computing&nbsp;the&nbsp;backward&nbsp;
+propagation
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;np.random.seed(1)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;retrieve&nbsp;parameters
+&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;=&nbsp;parameters[&quot;W1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;=&nbsp;parameters[&quot;b1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;=&nbsp;parameters[&quot;W2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;=&nbsp;parameters[&quot;b2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W3&nbsp;=&nbsp;parameters[&quot;W3&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b3&nbsp;=&nbsp;parameters[&quot;b3&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;#&nbsp;LINEAR-&gt;RELU-&gt;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID
+&nbsp;&nbsp;&nbsp;&nbsp;Z1&nbsp;=&nbsp;np.dot(W1,&nbsp;X)&nbsp;+&nbsp;b1
+&nbsp;&nbsp;&nbsp;&nbsp;A1&nbsp;=&nbsp;relu(Z1)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;4&nbsp;lines)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#&nbsp;Steps&nbsp;1-4&nbsp;below&nbsp;correspond&nbsp;to&nbsp;the&nbsp;Steps&nbsp;1-4&nbsp;described&nbsp;above.&nbsp;
+#&nbsp;Step&nbsp;1:&nbsp;initialize&nbsp;matrix&nbsp;D1&nbsp;=&nbsp;np.random.rand(...,&nbsp;...)
+&nbsp;&nbsp;&nbsp;&nbsp;D1&nbsp;=&nbsp;np.random.rand(A1.shape[0],&nbsp;A1.shape[1])&nbsp;&nbsp;
+#&nbsp;Step&nbsp;2:&nbsp;convert&nbsp;entries&nbsp;of&nbsp;D1&nbsp;to&nbsp;0&nbsp;or&nbsp;1&nbsp;(using&nbsp;keep_prob&nbsp;as&nbsp;the&nbsp;threshold)
+&nbsp;&nbsp;&nbsp;&nbsp;D1&nbsp;=&nbsp;D1&nbsp;&lt;&nbsp;keep_prob&nbsp;
+#&nbsp;Step&nbsp;3:&nbsp;shut&nbsp;down&nbsp;some&nbsp;neurons&nbsp;of&nbsp;A1&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;A1&nbsp;=&nbsp;A1&nbsp;*&nbsp;D1
+&nbsp;#&nbsp;Step&nbsp;4:&nbsp;scale&nbsp;the&nbsp;value&nbsp;of&nbsp;neurons&nbsp;that&nbsp;haven&#39;t&nbsp;been&nbsp;shut&nbsp;down
+&nbsp;&nbsp;&nbsp;&nbsp;A1&nbsp;=&nbsp;A1&nbsp;/&nbsp;keep_prob
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;Z2&nbsp;=&nbsp;np.dot(W2,&nbsp;A1)&nbsp;+&nbsp;b2
+&nbsp;&nbsp;&nbsp;&nbsp;A2&nbsp;=&nbsp;relu(Z2)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;4&nbsp;lines)
+#&nbsp;Step&nbsp;1:&nbsp;initialize&nbsp;matrix&nbsp;D2&nbsp;=&nbsp;np.random.rand(...,&nbsp;...)
+&nbsp;&nbsp;&nbsp;&nbsp;D2&nbsp;=&nbsp;np.random.rand(A2.shape[0],&nbsp;A2.shape[1])&nbsp;
+#&nbsp;Step&nbsp;2:&nbsp;convert&nbsp;entries&nbsp;of&nbsp;D2&nbsp;to&nbsp;0&nbsp;or&nbsp;1&nbsp;(using&nbsp;keep_prob&nbsp;as&nbsp;the&nbsp;threshold)
+&nbsp;&nbsp;&nbsp;&nbsp;D2&nbsp;=&nbsp;D2&nbsp;&lt;&nbsp;keep_prob&nbsp;
+#&nbsp;Step&nbsp;3:&nbsp;shut&nbsp;down&nbsp;some&nbsp;neurons&nbsp;of&nbsp;A2&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;A2&nbsp;=&nbsp;A2&nbsp;*&nbsp;D2&nbsp;&nbsp;&nbsp;&nbsp;
+#&nbsp;Step&nbsp;4:&nbsp;scale&nbsp;the&nbsp;value&nbsp;of&nbsp;neurons&nbsp;that&nbsp;haven&#39;t&nbsp;been&nbsp;shut&nbsp;down
+&nbsp;&nbsp;&nbsp;&nbsp;A2&nbsp;=&nbsp;A2&nbsp;/&nbsp;keep_prob
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;Z3&nbsp;=&nbsp;np.dot(W3,&nbsp;A2)&nbsp;+&nbsp;b3
+&nbsp;&nbsp;&nbsp;&nbsp;A3&nbsp;=&nbsp;sigmoid(Z3)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;=&nbsp;(Z1,&nbsp;D1,&nbsp;A1,&nbsp;W1,&nbsp;b1,&nbsp;Z2,&nbsp;D2,&nbsp;A2,&nbsp;W2,&nbsp;b2,&nbsp;Z3,&nbsp;A3,&nbsp;W3,&nbsp;b3)
+&nbsp;&nbsp;&nbsp;&nbsp;
+return&nbsp;A3,&nbsp;cache</pre><p style="text-indent:28px">测试一下：</p><pre class="brush:python;toolbar:false">X_assess,&nbsp;parameters&nbsp;=&nbsp;forward_propagation_with_dropout_test_case()
+A3,&nbsp;cache&nbsp;=&nbsp;forward_propagation_with_dropout
+(X_assess,&nbsp;parameters,&nbsp;keep_prob&nbsp;=&nbsp;0.7)
+print&nbsp;(&quot;A3&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(A3))</pre><p style="text-indent:28px">输出结果为：</p><p style="text-indent:28px">A3 =[[ 0.36974721 0.00305176 0.04565099 0.49683389 0.36974721]]</p><h3>3.1 – 带有Dropout的反向传播</h3><p><strong><span style="font-family:宋体">Exercise</span></strong>: Implement the backward propagation with dropout. As before, you are training a 3 layer network. Add dropout to the first and second hidden layers, using the masks <span style="color:inherit"><span style="display:inline-block"><span style="display:inline-block"><span style="clip:rect(1.242em, 1001.61em, 2.44em, -1000em)"><span style="display:inline-block"><span style="clip:rect(3.157em, 1000.7em, 4.167em, -1000em)">D[1]</span></span> and <span style="color:inherit"></span></span></span></span><span style="display:inline-block"><span style="display:inline-block"><span style="clip:rect(1.242em, 1001.61em, 2.44em, -1000em)"><span style="display:inline-block"><span style="clip:rect(3.157em, 1000.7em, 4.167em, -1000em)">D[2]</span></span> stored in the cache. </span></span></span></span></p><p><strong><span style="font-family:宋体">Instruction</span></strong>: Backpropagation with dropout is actually quite easy. You will have to carry out 2 Steps:</p><ol class=" list-paddingleft-2"><li><p><br/></p><p>You had previously shut down some neurons during forward propagation, by applying a mask D[1] to A1. In backpropagation, you will have to shut down the same neurons, by reapplying the same mask D[1] to dA1.<br/></p></li><li><p>During forward propagation, you had divided A1 by keep_prob. In backpropagation, you&#39;ll therefore have to divide dA1 by keep_prob again (the calculus interpretation is that if A[1] is scaled by keep_prob, then its derivative dA[1] is also scaled by the same keep_prob).</p><p><br/></p></li></ol><p>代码如下：<br/></p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;backward_propagation_with_dropout
+def&nbsp;backward_propagation_with_dropout(X,&nbsp;Y,&nbsp;cache,&nbsp;keep_prob):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implements&nbsp;the&nbsp;backward&nbsp;propagation&nbsp;of&nbsp;
+our&nbsp;baseline&nbsp;model&nbsp;to&nbsp;which&nbsp;we&nbsp;added&nbsp;dropout.
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;input&nbsp;dataset,&nbsp;of&nbsp;shape&nbsp;(2,&nbsp;number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;&quot;true&quot;&nbsp;labels&nbsp;vector,&nbsp;of&nbsp;shape&nbsp;(output&nbsp;size,&nbsp;
+number&nbsp;of&nbsp;examples)
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;--&nbsp;cache&nbsp;output&nbsp;from&nbsp;forward_propagation_with_dropout()
+&nbsp;&nbsp;&nbsp;&nbsp;keep_prob&nbsp;-&nbsp;probability&nbsp;of&nbsp;keeping&nbsp;a&nbsp;neuron&nbsp;active&nbsp;
+during&nbsp;drop-out,&nbsp;scalar
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;--&nbsp;A&nbsp;dictionary&nbsp;with&nbsp;the&nbsp;gradients&nbsp;with&nbsp;respect&nbsp;to&nbsp;
+each&nbsp;parameter,&nbsp;activation&nbsp;and&nbsp;pre-activation&nbsp;variables
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]
+&nbsp;&nbsp;&nbsp;&nbsp;(Z1,&nbsp;D1,&nbsp;A1,&nbsp;W1,&nbsp;b1,&nbsp;Z2,&nbsp;D2,&nbsp;A2,&nbsp;W2,&nbsp;b2,&nbsp;Z3,&nbsp;A3,&nbsp;W3,&nbsp;b3)&nbsp;=&nbsp;cache
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dZ3&nbsp;=&nbsp;A3&nbsp;-&nbsp;Y
+&nbsp;&nbsp;&nbsp;&nbsp;dW3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ3,&nbsp;A2.T)
+&nbsp;&nbsp;&nbsp;&nbsp;db3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ3,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;np.dot(W3.T,&nbsp;dZ3)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;2&nbsp;lines&nbsp;of&nbsp;code)
+#&nbsp;Step&nbsp;1:&nbsp;Apply&nbsp;mask&nbsp;D2&nbsp;to&nbsp;shut&nbsp;down&nbsp;the&nbsp;same&nbsp;neurons&nbsp;as&nbsp;
+#during&nbsp;the&nbsp;forward&nbsp;propagation
+&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;dA2&nbsp;*&nbsp;D2&nbsp;&nbsp;&nbsp;&nbsp;
+#&nbsp;Step&nbsp;2:&nbsp;Scale&nbsp;the&nbsp;value&nbsp;of&nbsp;neurons&nbsp;that&nbsp;haven&#39;t&nbsp;been&nbsp;shut&nbsp;down
+&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;dA2&nbsp;/&nbsp;keep_prob&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;dZ2&nbsp;=&nbsp;np.multiply(dA2,&nbsp;np.int64(A2&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;dW2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ2,&nbsp;A1.T)
+&nbsp;&nbsp;&nbsp;&nbsp;db2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ2,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dA1&nbsp;=&nbsp;np.dot(W2.T,&nbsp;dZ2)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(≈&nbsp;2&nbsp;lines&nbsp;of&nbsp;code)
+#&nbsp;Step&nbsp;1:&nbsp;Apply&nbsp;mask&nbsp;D1&nbsp;to&nbsp;shut&nbsp;down&nbsp;the&nbsp;same&nbsp;neurons&nbsp;as&nbsp;
+#during&nbsp;the&nbsp;forward&nbsp;propagation
+&nbsp;&nbsp;&nbsp;&nbsp;dA1&nbsp;=&nbsp;dA1&nbsp;*&nbsp;D1
+#&nbsp;Step&nbsp;2:&nbsp;Scale&nbsp;the&nbsp;value&nbsp;of&nbsp;neurons&nbsp;that&nbsp;haven&#39;t&nbsp;been&nbsp;shut&nbsp;down
+&nbsp;&nbsp;&nbsp;&nbsp;dA1&nbsp;=&nbsp;dA1&nbsp;/&nbsp;keep_prob&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;dZ1&nbsp;=&nbsp;np.multiply(dA1,&nbsp;np.int64(A1&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;dW1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ1,&nbsp;X.T)
+&nbsp;&nbsp;&nbsp;&nbsp;db1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ1,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;=&nbsp;{&quot;dZ3&quot;:&nbsp;dZ3,&nbsp;&quot;dW3&quot;:&nbsp;dW3,&nbsp;&quot;db3&quot;:&nbsp;db3,&quot;dA2&quot;:&nbsp;dA2,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dZ2&quot;:&nbsp;dZ2,&nbsp;&quot;dW2&quot;:&nbsp;dW2,&nbsp;&quot;db2&quot;:&nbsp;db2,&nbsp;&quot;dA1&quot;:&nbsp;dA1,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dZ1&quot;:&nbsp;dZ1,&nbsp;&quot;dW1&quot;:&nbsp;dW1,&nbsp;&quot;db1&quot;:&nbsp;db1}</pre><p style="margin-top:auto;margin-bottom: auto;margin-left:48px;text-align:left;text-indent:28px">测试一下：</p><pre class="brush:python;toolbar:false">X_assess,&nbsp;Y_assess,cache=backward_propagation_with_dropout_test_case()
+gradients&nbsp;=&nbsp;backward_propagation_with_dropout
+(X_assess,&nbsp;Y_assess,&nbsp;cache,&nbsp;keep_prob&nbsp;=&nbsp;0.8)
+print&nbsp;(&quot;dA1&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(gradients[&quot;dA1&quot;]))
+print&nbsp;(&quot;dA2&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(gradients[&quot;dA2&quot;]))</pre><p style="margin-top:auto;margin-bottom: auto;text-align:left">结果：</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">dA1 = [[ 0.36544439&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.00188233&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.17408748]</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">&nbsp;[ 0.65515713&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.00337459&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]]</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">dA2 = [[ 0.58180856&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.00299679&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.27715731]</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">&nbsp;[ 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.53159854 -0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.53159854 -0.34089673]</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">&nbsp;[ 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.00292733&nbsp; 0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -0.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]]</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">测试一下其cost：</p><pre class="brush:python;toolbar:false">parameters=model(train_X,train_Y,keep_prob=0.86,
+learning_rate=0.3)
+print&nbsp;(&quot;On&nbsp;the&nbsp;train&nbsp;set:&quot;)
+predictions_train&nbsp;=&nbsp;predict(train_X,&nbsp;train_Y,parameters)
+print&nbsp;(&quot;On&nbsp;the&nbsp;test&nbsp;set:&quot;)
+predictions_test&nbsp;=&nbsp;predict(test_X,&nbsp;test_Y,parameters)</pre><p style="margin-top:auto;margin-bottom: auto;text-align:left">结果为：</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">Cost after iteration 0: 0.6543912405149825</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">Cost after iteration 10000: 0.061016986574905605</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">Cost after iteration 20000: 0.060582435798513114</p><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517938626887620.jpg" title="1517938626887620.jpg" alt="8.jpg"/></p><p style="margin-top:auto;margin-bottom: auto;text-align:left">On the train set:</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">Accuracy: 0.928909952607</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">On the test set:</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">Accuracy: 0.95</p><p style="margin-top:auto;margin-bottom: auto;text-align:left">精确率已经高达95%了。下面看其边界情况：</p><pre class="brush:python;toolbar:false">plt.title(&quot;Model&nbsp;with&nbsp;dropout&quot;)
+axes&nbsp;=&nbsp;plt.gca()
+axes.set_xlim([-0.75,0.40])
+axes.set_ylim([-0.75,0.65])
+plot_decision_boundary(lambda&nbsp;x:&nbsp;predict_dec(parameters,&nbsp;x.T),&nbsp;train_X,&nbsp;train_Y)</pre><p style="text-align: center;"><img src="/wp-content/uploads/image/20180207/1517938655285230.jpg" title="1517938655285230.jpg" alt="9.jpg"/></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:red">注意：</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:red">1.dropout</span><span style="color:red">只能在训练中使用。</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:red">2.</span><span style="color:red">像tensorflow，PaddlePaddle，keras或caffe这样的深度学习框架带有一个dropout层的实现。 不要紧张 - 你很快就会学到一些这样的框架。</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:#4472C4">关于dropout你应该知道：</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:#4472C4">1.dropout</span><span style="color:#4472C4">是一种正则化技术。</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:#4472C4">2.</span><span style="color:#4472C4">只能在训练期间只能使用dropout。 测试期间不要使用dropout。</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:#4472C4">3.</span><span style="color:#4472C4">在前向传播和反向传播期间都是用dropout。</span></strong></p><p style="margin-top:auto;margin-bottom: auto;text-align:left"><strong><span style="color:#4472C4">4.</span><span style="color:#4472C4">在训练期间，通过keep_prob分隔每个丢失层，以保持激活的相同期望值。 例如，如果keep_prob是0.5，那么我们将平均关闭一半的节点，所以输出将被缩放0.5，因为只剩下一半对解决方案有贡献。 除以0.5相当于乘以2。因此，输出现在具有相同的期望值。 即使keep_prob是0.5以外的值，你也可以检查它是否有效。</span></strong></p><h2>4 - Conclusions</h2><p><strong><span style="font-family:宋体">Here are the results of our three models</span></strong>:</p><table><tbody><tr class="firstRow"><td style="padding:1px 1px 1px 1px"><p><strong><span style="font-family:等线">model</span></strong> </p></td><td style="padding:1px 1px 1px 1px"><p><strong><span style="font-family:等线">train accuracy</span></strong> </p></td><td style="padding:1px 1px 1px 1px"><p><strong><span style="font-family:等线">test accuracy</span></strong> </p></td></tr><tr><td style="padding:1px 1px 1px 1px"><p>3-layer NN without regularization</p></td><td style="padding:1px 1px 1px 1px"><p>95%</p></td><td style="padding:1px 1px 1px 1px"><p>91.5%</p></td></tr><tr><td style="padding:1px 1px 1px 1px"><p>3-layer NN with L2-regularization</p></td><td style="padding:1px 1px 1px 1px"><p>94%</p></td><td style="padding:1px 1px 1px 1px"><p>93%</p></td></tr><tr><td style="padding:1px 1px 1px 1px"><p>3-layer NN with dropout</p></td><td style="padding:1px 1px 1px 1px"><p>93%</p></td><td style="padding:1px 1px 1px 1px"><p>95%</p></td></tr></tbody></table><p>Note that regularization hurts training set performance! This is because it limits the ability of the network to overfit to the training set. But since it ultimately gives better test accuracy, it is helping your system.</p><p>Congratulations for finishing this assignment! And also for revolutionizing French football. :-)</p><p><br/></p>
