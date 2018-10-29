@@ -1,0 +1,254 @@
+---
+ID: 3611
+post_title: >
+  吴恩达深度学习课程
+  DeepLearning.ai
+  编程作业（2-1）Part.3
+post_name: '%e5%90%b4%e6%81%a9%e8%be%be%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e8%af%be%e7%a8%8b-deeplearning-ai-%e7%bc%96%e7%a8%8b%e4%bd%9c%e4%b8%9a%ef%bc%882-1%ef%bc%89part-3'
+author: 小奥
+post_date: 2018-02-07 01:47:30
+layout: post
+link: >
+  http://www.yushuai.me/2018/02/07/3611.html
+published: true
+tags:
+  - 人工智能
+  - 神经网络
+categories:
+  - Deep Learning
+---
+<p><span style="font-family:宋体">梯度检验</span></p><p><span style="font-family:宋体">欢迎来到本周的最后作业！</span> <span style="font-family:宋体">在这个任务中，您将学习实现并使用梯度检验。</span></p><p style="text-indent:28px"><span style="font-family:宋体">您是全球范围内开展移动支付的团队的一部分，并被要求建立一个深度学习模式来检测欺诈行为</span> - <span style="font-family:宋体">每当有人付款时，您想要查看付款是否有欺诈行为，例如用户</span> <span style="font-family:宋体">帐户已被黑客占用。</span></p><p style="text-indent:28px"><span style="font-family:宋体">但是反向传播实施起来相当具有挑战性，有时会有错误。</span> <span style="font-family:宋体">因为这是关键任务应用程序，所以贵公司的首席执行官要真正确定您的反向传播实施是正确的。</span> <span style="font-family:宋体">你的首席执行官说：“给我一个证明你的反向传播实际上是有效的！”</span> <span style="font-family:宋体">为了让这个保证，你将使用“梯度检验”。</span></p><p style="text-indent:28px"><span style="font-family:宋体">我们开始做吧！</span></p><p><span style="font-family:宋体">首先依旧是导入所有需要的包</span></p><pre class="brush:python;toolbar:false">#&nbsp;Packages
+import&nbsp;numpy&nbsp;as&nbsp;np
+from&nbsp;testCases&nbsp;import&nbsp;*
+from&nbsp;gc_utils&nbsp;import&nbsp;sigmoid,&nbsp;relu,
+from&nbsp;gc_utils&nbsp;import&nbsp;dictionary_to_vector,&nbsp;vector_to_dictionary
+from&nbsp;gc_utils&nbsp;import&nbsp;gradients_to_vector</pre><p style="margin-top:10px;text-align:left;background:white"><strong><span style="font-size:22px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">1) </span></strong><strong><span style="font-size:22px;font-family:宋体;color:black">梯度检验是如何工作的呢</span></strong><strong><span style="font-size:22px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">?</span></strong></p><p style="text-align:left;text-indent:28px;background:white"><span style=";font-family:宋体;color:black">反向传播算法计算梯度（</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;border:none windowtext 1px;padding:0">∂J/∂θ</span><span style=";font-family:宋体;color:black">），其中θ表示模型的参数。</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">J</span><span style=";font-family:宋体;color:black">是利用前向传播算法和代价函数计算的结果。</span></p><p style="text-align:left;text-indent:28px;background:white"><span style=";font-family:宋体;color:black">由于前向传播算法相对容易执行，你对它非常有信心，所以你几乎</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">100%</span><span style=";font-family:宋体;color:black">的确认计算出来的</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">J</span><span style=";font-family:宋体;color:black">是正确的。因此，你可以用你的代码来计算</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">J</span><span style=";font-family:宋体;color:black">以便验证计算（</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;border:none windowtext 1px;padding:0">∂J/∂θ</span><span style=";font-family:宋体;color:black">）的代码。</span></p><p style="text-align:left;text-indent:28px;background:white"><span style=";font-family:宋体;color:black">让我们回顾一下梯度的概念：</span></p><p style="text-align: center; text-indent: 28px; background: white;"><span style=";font-family:宋体;color:black"><img src="/wp-content/uploads/image/20180208/1518026231915146.png" title="1518026231915146.png" alt="1.png"/></span></p><p style="text-indent: 28px; background: white;"><br/></p><p style=";background:white"><span style="font-family: 宋体">我们可以知道：</span></p><p style=";background:white"><span style="font-family: 宋体">（</span><span style="font-family: Helvetica, sans-serif">1</span><span style="font-family: 宋体">）此式是你想验证计算正确的式子。</span></p><p style=";background:white"><span style="font-family: 宋体">（</span><span style="font-family: Helvetica, sans-serif">2</span><span style="font-family: 宋体">）由于你对于计算</span><span style="font-family: Helvetica, sans-serif">J</span><span style="font-family: 宋体">非常有信心，你可以根据此计算出</span><span style="font-family: Helvetica, sans-serif">J(θ+ε)</span><span style="font-family: 宋体">和</span><span style="font-family: Helvetica, sans-serif">J(θ−ε)</span><span style="font-family: 宋体">。</span></p><h2 style="margin-top:10px;margin-right:0;margin-bottom:0;margin-left: 0;margin-bottom:0;background:white"><span style="font-size: 22px;font-family: Helvetica, sans-serif">2) 1</span><span style="font-size: 22px">维梯度检验</span></h2><p style=";text-indent: 28px;background: white;box-sizing: border-box"><span style="font-size: 14px">考虑一个</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">1</span><span style="font-size: 14px">维线性函数</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">&nbsp;J(<span style="font-family: STIXMathJax_Main-italic, serif; font-size: 17px; text-indent: 28px; background-color: #FFFFFF;">θ</span>)=<span style="font-family: STIXMathJax_Main-italic, serif; font-size: 17px; text-indent: 28px; background-color: #FFFFFF;">θX</span></span><span style="box-sizing: border-box;transition: none;clip:rect(1px, 1px, 1px, 1px);overflow:hidden">，这个模型只包含一个实值参数<span style="font-size: 17px;font-family: STIXMathJax_Main-italic, serif;border: 1px none windowtext;padding: 0">θ</span><span style="box-sizing: border-box;transition: none">，并且</span><span style="font-size: 15px;font-family: STIXMathJax_Main-italic, serif;border: 1px none windowtext;padding: 0">X</span><span style="font-size: 15px;border: 1px none windowtext;padding: 0">是输入。</span></span></p><p style=";text-indent: 28px;background: white;box-sizing: border-box"><span style="box-sizing: border-box;transition: none;clip:rect(1px, 1px, 1px, 1px);overflow:hidden"></span></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size:15px;color:black;border:none windowtext 1px;padding:0">你将运行代码来计算</span><span style="font-size:15px;font-family:&#39;STIXMathJax_Main-italic&#39;,serif;color:black;border:none windowtext 1px;padding:0">J</span><span style="font-size:15px;color:black;border:none windowtext 1px;padding:0">以及它的导数，然后利用梯度检验确保</span><span style="font-size:15px;font-family:&#39;STIXMathJax_Main-italic&#39;,serif;color:black;border:none windowtext 1px;padding:0">J</span><span style="font-size:15px;color:black;border:none windowtext 1px;padding:0">的导数计算是否正确。</span></p><p style="margin-bottom: 0px; text-indent: 28px; background: white; text-align: center;"><span style="font-size:15px;color:black;border:none windowtext 1px;padding:0"><img src="/wp-content/uploads/image/20180208/1518026363912242.jpg" title="1518026363912242.jpg" alt="2.jpg"/></span></p><p style="margin-bottom: 0px; text-indent: 28px; background: white;"><br/></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px">上面的流程图展示了计算的步骤：首先从</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">X</span><span style="font-size: 14px">开始，然后计算函数</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">J</span><span style="font-size: 14px">（前向传播），最后计算其导数（反向传播）。</span></p><p style=";margin-bottom:0;background:white"><strong><span style="font-size: 14px;font-family: Helvetica, sans-serif">Exercise</span></strong><span style="font-size: 14px;font-family: Helvetica, sans-serif">: </span><span style="font-size: 14px">执行前向传播和反向传播代码。例如：</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">compute both</span> <span style="font-size: 14px;font-family: Helvetica, sans-serif;border: 1px none windowtext;padding: 0">J(.)</span><span style="font-size: 14px;font-family: Helvetica, sans-serif">&nbsp;(&quot;forward propagation&quot;) and its derivative with respect to&nbsp;<span style="border:none windowtext 1px;padding:0"><span style="box-sizing: border-box;transition: none;display:inline-block"><span style="box-sizing: border-box;color:inherit"><span style="box-sizing: border-box;display:inline-table; word-wrap: normal;max-width: none;max-height: none;min-width: 0px;min-height: 0px; float:none;word-spacing:normal"><span style="box-sizing: border-box;transition: none;display:inline-block"><span style="box-sizing: border-box;transition: none;clip:rect(1.491em, 1000.48em, 2.503em, -999.997em)">θ</span></span>&nbsp;(&quot;backward propagation&quot;), in two separate functions.</span></span></span></span></span></p><p style="background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span></p><pre class="brush:python;toolbar:false">#GRADED&nbsp;FUNCTION:&nbsp;forward_propagation
+def&nbsp;forward_propagation(x,&nbsp;theta):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implement&nbsp;the&nbsp;linear&nbsp;forward&nbsp;propagation&nbsp;(compute&nbsp;J)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;presented&nbsp;in&nbsp;Figure&nbsp;1&nbsp;(J(theta)&nbsp;=&nbsp;theta&nbsp;*&nbsp;x)
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;--&nbsp;a&nbsp;real-valued&nbsp;input
+&nbsp;&nbsp;&nbsp;&nbsp;theta&nbsp;--&nbsp;our&nbsp;parameter,&nbsp;a&nbsp;real&nbsp;number&nbsp;as&nbsp;well
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;J&nbsp;--&nbsp;the&nbsp;value&nbsp;of&nbsp;function&nbsp;J,&nbsp;computed&nbsp;using&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;formula&nbsp;J(theta)&nbsp;=&nbsp;theta&nbsp;*&nbsp;x
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;J&nbsp;=&nbsp;theta&nbsp;*&nbsp;x
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+return&nbsp;J</pre><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span><br/></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px">测试一下：</span></p><p style="text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span></p><pre class="brush:python;toolbar:false">x,&nbsp;theta&nbsp;=&nbsp;2,&nbsp;4
+J&nbsp;=&nbsp;forward_propagation(x,&nbsp;theta)
+print&nbsp;(&quot;J&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(J))</pre><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span><br/></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px">结果为</span><span style="font-size: 14px;font-family: Helvetica, sans-serif"> J=8</span></p><p style=";margin-bottom:0;background:white"><strong><span style="font-size: 14px;font-family: Helvetica, sans-serif">Exercise</span></strong><span style="font-size: 14px;font-family: Helvetica, sans-serif">: <span style="font-size: 14px">执行反向传播（求导）代码。</span></span></p><p style="background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span></p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;backward_propagation
+def&nbsp;backward_propagation(x,&nbsp;theta):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Computes&nbsp;the&nbsp;derivative&nbsp;of&nbsp;J&nbsp;with&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;respect&nbsp;to&nbsp;theta&nbsp;(see&nbsp;Figure&nbsp;1).
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;--&nbsp;a&nbsp;real-valued&nbsp;input
+&nbsp;&nbsp;&nbsp;&nbsp;theta&nbsp;--&nbsp;our&nbsp;parameter,&nbsp;a&nbsp;real&nbsp;number&nbsp;as&nbsp;well
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;dtheta&nbsp;--&nbsp;the&nbsp;gradient&nbsp;of&nbsp;the&nbsp;cost&nbsp;with&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;respect&nbsp;to&nbsp;theta
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;dtheta&nbsp;=&nbsp;x
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+return&nbsp;dtheta</pre><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span><br/></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px">测试一下：</span></p><p style="text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span></p><pre class="brush:python;toolbar:false">x,&nbsp;theta&nbsp;=&nbsp;2,&nbsp;4
+dtheta&nbsp;=&nbsp;backward_propagation(x,&nbsp;theta)
+print&nbsp;(&quot;dtheta&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(dtheta))</pre><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size: 14px;font-family: Helvetica, sans-serif"></span><br/></p><p style="background: white"><strong><span style="font-family: Helvetica, sans-serif">Exercise</span></strong><span style="font-family: Helvetica, sans-serif">: </span><span style="font-family: 宋体">为了展示函数</span><span style="font-family: &#39;Courier New&#39;;border: 1px none windowtext;padding: 0">backward_propagation()</span><span style="font-family: Helvetica, sans-serif">&nbsp;</span><span style="font-family: 宋体">正确的计算了梯度，让我们来做梯度检验。</span></p><p style="margin-top: 16px;background: white"><strong><span style="font-family: Helvetica, sans-serif">Instructions</span></strong><span style="font-family: Helvetica, sans-serif">:</span></p><p class="MsoListParagraph" style="margin-left: 28px;background: white"><span style="font-family: Wingdings">l<span style="font-variant-numeric: normal;font-variant-east-asian: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp; </span></span><span style="font-family: 宋体">首先利用最上面的式子和</span><span style="font-family: Helvetica, sans-serif;border: 1px none windowtext;padding: 0">ε</span><span style="font-family: 宋体">计算</span><span style="font-family: Helvetica, sans-serif"> &quot;gradapprox&quot; </span><span style="font-family: 宋体">。步骤如下：</span></p><p class="MsoListParagraph" style="margin-left: 28px; background: white; text-align: center;"><img src="/wp-content/uploads/image/20180208/1518026488950176.png" title="1518026488950176.png" alt="3.png"/></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left;background:white"><span style=";font-family:Wingdings;color:black">l<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span></span><span style=";font-family:宋体;color:black">然后，利用反向传播计算梯度，并把结果储存在变量</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;background:white">&quot;grad&quot;</span><span style=";font-family:宋体;color:black;background:white">中。</span></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left;background:white"><span style=";font-family:Wingdings;color:black">l<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span></span><span style=";font-family:宋体;color:black;background:white">利用笔记</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;background:white">2-1</span><span style=";font-family:宋体;color:black;background:white">中的公式计算</span> <span style=";font-family: 宋体;color:black;background:white">“</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;background:white">gradapprox</span><span style=";font-family:宋体;color:black;background:white">”和“</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;background:white">grad</span><span style=";font-family:宋体;color:black;background:white">”之间的相对差值。</span></p><p style=";background:white"><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">&nbsp;</span></p><p style="text-align:left;text-indent:28px"><span style=";font-family:宋体;color:black;background:white">三步来计算这个公式：</span></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left"><span style="font-size:16px;font-family:Wingdings">l<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span></span><span style="font-size:16px;font-family:宋体">利用</span><span style=";font-family: &#39;Helvetica&#39;,sans-serif;color:black">np.linalg.norm(...)</span><span style=";font-family:宋体;color:black">计算分子</span></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left"><span style="font-size:16px;font-family:Wingdings">l<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span></span><span style=";font-family:宋体;color:black">调用</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">np.linalg.norm(...)</span><span style=";font-family:宋体;color:black">两次计算分母</span></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left"><span style="font-size:16px;font-family:Wingdings">l<span style="font:9px &#39;Times New Roman&#39;">&nbsp; </span></span><span style=";font-family:宋体;color:black">分子除以分母</span></p><p class="MsoListParagraph" style="margin-left:28px;text-align:left;text-indent:0"><span style=";font-family:宋体;color:black">如果上面的二范数计算出来</span><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black">10<sup>−7</sup></span><span style=";font-family:宋体;color:black">，那么可以证明这个计算正确，否则计算错误。</span></p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;gradient_check
+def&nbsp;gradient_check(x,&nbsp;theta,&nbsp;epsilon&nbsp;=&nbsp;1e-7):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;--&nbsp;a&nbsp;real-valued&nbsp;input
+&nbsp;&nbsp;&nbsp;&nbsp;theta&nbsp;--&nbsp;our&nbsp;parameter,&nbsp;a&nbsp;real&nbsp;number
+&nbsp;&nbsp;&nbsp;&nbsp;as&nbsp;well
+&nbsp;&nbsp;&nbsp;&nbsp;epsilon&nbsp;--&nbsp;tiny&nbsp;shift&nbsp;to&nbsp;the&nbsp;input&nbsp;to
+&nbsp;&nbsp;&nbsp;compute&nbsp;approximated&nbsp;gradient&nbsp;with&nbsp;formula(1)
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;difference&nbsp;--
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;difference&nbsp;(2)&nbsp;between&nbsp;the&nbsp;approximated&nbsp;gradient
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;the&nbsp;backward&nbsp;propagation&nbsp;gradient
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compute&nbsp;gradapprox&nbsp;using&nbsp;left&nbsp;side&nbsp;of&nbsp;formula&nbsp;(1).
+&nbsp;&nbsp;&nbsp;&nbsp;#epsilon&nbsp;is&nbsp;small&nbsp;enough,&nbsp;you&nbsp;don&#39;t&nbsp;need&nbsp;to&nbsp;worry
+#about&nbsp;the&nbsp;limit.
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;5&nbsp;lines)
+&nbsp;&nbsp;&nbsp;&nbsp;thetaplus=theta&nbsp;+&nbsp;epsilon#&nbsp;Step&nbsp;1
+&nbsp;&nbsp;&nbsp;&nbsp;thetaminus=theta&nbsp;-&nbsp;epsilon&nbsp;&nbsp;&nbsp;#&nbsp;Step&nbsp;2
+&nbsp;&nbsp;&nbsp;&nbsp;J_plus=forward_propagation(x,&nbsp;thetaplus)
+&nbsp;&nbsp;&nbsp;&nbsp;J_minus=forward_propagation(x,&nbsp;thetaminus)
+&nbsp;&nbsp;&nbsp;&nbsp;gradapprox=(J_plus&nbsp;-&nbsp;J_minus)/(2&nbsp;*&nbsp;epsilon)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Check&nbsp;if&nbsp;gradapprox&nbsp;is&nbsp;close&nbsp;enough
+#to&nbsp;the&nbsp;output&nbsp;of&nbsp;backward_propagation()
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;grad&nbsp;=&nbsp;backward_propagation(x,&nbsp;theta)
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;numerator=np.linalg.norm(grad-gradapprox)
+&nbsp;&nbsp;&nbsp;&nbsp;denominator=np.linalg.norm(grad)+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;np.linalg.norm(gradapprox)
+&nbsp;&nbsp;&nbsp;&nbsp;difference&nbsp;=&nbsp;numerator&nbsp;/&nbsp;denominator
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;difference&nbsp;&lt;&nbsp;1e-7:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;(&quot;The&nbsp;gradient&nbsp;is&nbsp;correct!&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;else:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;(&quot;The&nbsp;gradient&nbsp;is&nbsp;wrong!&quot;)
+return&nbsp;difference</pre><p style="text-indent:28px"><span style="font-family:宋体">测试一下：</span></p><pre class="brush:python;toolbar:false">x,&nbsp;theta&nbsp;=&nbsp;2,&nbsp;4
+difference&nbsp;=&nbsp;gradient_check(x,&nbsp;theta)
+print(&quot;difference&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(difference))</pre><p style="text-indent:28px"><span style="font-family:宋体">结果：</span></p><p style="text-indent:28px">The gradient is correct!</p><p style="text-indent:28px">difference = 2.91933588329e-10</p><p style="text-indent:28px"><span style="font-family:宋体">现在，在更一般的情况下，您的成本函数</span>J<span style="font-family:宋体">具有多于一个一维输入。当你训练一个神经网络时，θ实际上由多个矩阵</span>W [l]<span style="font-family:宋体">组成，并且偏向</span>b [l]<span style="font-family:宋体">！知道如何用更高维度的输入进行梯度检验是很重要的。我们开始做吧！</span></p><h2 style="margin-top:10px;margin-right:0;margin-bottom:0;margin-left: 0;margin-bottom:0;background:white"><span style="font-size: 22px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">3) N</span><span style="font-size:22px;color:black">维梯度检验</span></h2><p style="margin-bottom: 0px; text-indent: 28px; background: white; text-align: center;"><img src="/wp-content/uploads/image/20180208/1518026549746245.jpg" title="1518026549746245.jpg" alt="4.jpg"/></p><p><em><span style=";font-family:&#39;Helvetica&#39;,sans-serif;color:black;background:white">LINEAR -&gt; RELU -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID</span></em></p><p><em><span style=";font-family:宋体;color:black;background:white;font-style:normal">代码如下：</span></em></p><pre class="brush:python;toolbar:false">def&nbsp;forward_propagation_n(X,&nbsp;Y,&nbsp;parameters):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implements&nbsp;the&nbsp;forward&nbsp;propagation
+(and&nbsp;computes&nbsp;the&nbsp;cost)&nbsp;presented&nbsp;in&nbsp;Figure&nbsp;3.&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;training&nbsp;set&nbsp;for&nbsp;m&nbsp;examples
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;labels&nbsp;for&nbsp;m&nbsp;examples
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--&nbsp;python&nbsp;dictionary&nbsp;containing&nbsp;your
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;&quot;W1&quot;,&nbsp;&quot;b1&quot;,&nbsp;&quot;W2&quot;,&nbsp;&quot;b2&quot;,&nbsp;&quot;W3&quot;,&nbsp;&quot;b3&quot;:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(5,&nbsp;4)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(5,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(3,&nbsp;5)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(3,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W3&nbsp;--&nbsp;weight&nbsp;matrix&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;3)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b3&nbsp;--&nbsp;bias&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(1,&nbsp;1)&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;--&nbsp;the&nbsp;cost&nbsp;function
+(logistic&nbsp;cost&nbsp;for&nbsp;one&nbsp;example)
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;retrieve&nbsp;parameters
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]
+&nbsp;&nbsp;&nbsp;&nbsp;W1&nbsp;=&nbsp;parameters[&quot;W1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b1&nbsp;=&nbsp;parameters[&quot;b1&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W2&nbsp;=&nbsp;parameters[&quot;W2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b2&nbsp;=&nbsp;parameters[&quot;b2&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;W3&nbsp;=&nbsp;parameters[&quot;W3&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;b3&nbsp;=&nbsp;parameters[&quot;b3&quot;]
+&nbsp;#LINEAR-&gt;RELU-&gt;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID
+&nbsp;&nbsp;&nbsp;&nbsp;Z1&nbsp;=&nbsp;np.dot(W1,&nbsp;X)&nbsp;+&nbsp;b1
+&nbsp;&nbsp;&nbsp;&nbsp;A1&nbsp;=&nbsp;relu(Z1)
+&nbsp;&nbsp;&nbsp;&nbsp;Z2&nbsp;=&nbsp;np.dot(W2,&nbsp;A1)&nbsp;+&nbsp;b2
+&nbsp;&nbsp;&nbsp;&nbsp;A2&nbsp;=&nbsp;relu(Z2)
+&nbsp;&nbsp;&nbsp;&nbsp;Z3&nbsp;=&nbsp;np.dot(W3,&nbsp;A2)&nbsp;+&nbsp;b3
+&nbsp;&nbsp;&nbsp;&nbsp;A3&nbsp;=&nbsp;sigmoid(Z3)
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Cost
+&nbsp;&nbsp;&nbsp;&nbsp;logprobs&nbsp;=&nbsp;np.multiply(-np.log(A3),Y)
+&nbsp;&nbsp;&nbsp;&nbsp;+np.multiply(-np.log(1&nbsp;-&nbsp;A3),&nbsp;1&nbsp;-&nbsp;Y)
+&nbsp;&nbsp;&nbsp;&nbsp;cost&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(logprobs)
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;=&nbsp;(Z1,&nbsp;A1,&nbsp;W1,&nbsp;b1,&nbsp;Z2,&nbsp;A2,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W2,&nbsp;b2,&nbsp;Z3,&nbsp;A3,&nbsp;W3,&nbsp;b3)
+return&nbsp;cost,&nbsp;cache</pre><p><span style="font-family:宋体">反向传播代码如下：</span></p><pre class="brush:python;toolbar:false">def&nbsp;backward_propagation_n(X,&nbsp;Y,&nbsp;cache):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Implement&nbsp;the&nbsp;backward&nbsp;propagation
+&nbsp;&nbsp;presented&nbsp;in&nbsp;figure&nbsp;2.
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;--&nbsp;input&nbsp;datapoint,&nbsp;of&nbsp;shape&nbsp;(input&nbsp;size,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;--&nbsp;true&nbsp;&quot;label&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;--&nbsp;cache&nbsp;output&nbsp;from
+&nbsp;&nbsp;&nbsp;&nbsp;forward_propagation_n()&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;--&nbsp;A&nbsp;dictionary&nbsp;with&nbsp;the&nbsp;gradients&nbsp;of
+&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;cost&nbsp;with&nbsp;respect&nbsp;to&nbsp;each&nbsp;parameter,&nbsp;activation
+&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;pre-activation&nbsp;variables.
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;=&nbsp;X.shape[1]
+&nbsp;&nbsp;&nbsp;&nbsp;(Z1,&nbsp;A1,&nbsp;W1,&nbsp;b1,&nbsp;Z2,&nbsp;A2,&nbsp;W2,&nbsp;b2,&nbsp;Z3,&nbsp;A3,&nbsp;W3,&nbsp;b3)
+&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;cache
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dZ3&nbsp;=&nbsp;A3&nbsp;-&nbsp;Y
+&nbsp;&nbsp;&nbsp;&nbsp;dW3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ3,&nbsp;A2.T)
+&nbsp;&nbsp;&nbsp;&nbsp;db3&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ3,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dA2&nbsp;=&nbsp;np.dot(W3.T,&nbsp;dZ3)
+&nbsp;&nbsp;&nbsp;&nbsp;dZ2&nbsp;=&nbsp;np.multiply(dA2,&nbsp;np.int64(A2&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;#print(&quot;dZ2:&quot;,&nbsp;dZ2)
+&nbsp;&nbsp;&nbsp;&nbsp;#dW2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ2,&nbsp;A1.T)&nbsp;*&nbsp;2
+&nbsp;&nbsp;&nbsp;&nbsp;dW2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ2,&nbsp;A1.T)
+&nbsp;&nbsp;&nbsp;&nbsp;db2&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ2,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;dA1&nbsp;=&nbsp;np.dot(W2.T,&nbsp;dZ2)
+&nbsp;&nbsp;&nbsp;&nbsp;dZ1&nbsp;=&nbsp;np.multiply(dA1,&nbsp;np.int64(A1&nbsp;&gt;&nbsp;0))
+&nbsp;&nbsp;&nbsp;&nbsp;#print(&quot;dZ1:&quot;,&nbsp;dZ1)
+&nbsp;&nbsp;&nbsp;&nbsp;dW1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.dot(dZ1,&nbsp;X.T)
+&nbsp;&nbsp;&nbsp;&nbsp;#db1&nbsp;=&nbsp;4./m&nbsp;*&nbsp;np.sum(dZ1,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;&nbsp;db1&nbsp;=&nbsp;1./m&nbsp;*&nbsp;np.sum(dZ1,&nbsp;axis=1,&nbsp;keepdims&nbsp;=&nbsp;True)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;gradients&nbsp;=&nbsp;{&quot;dZ3&quot;:&nbsp;dZ3,&nbsp;&quot;dW3&quot;:&nbsp;dW3,&nbsp;&quot;db3&quot;:&nbsp;db3,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dA2&quot;:&nbsp;dA2,&nbsp;&quot;dZ2&quot;:&nbsp;dZ2,&nbsp;&quot;dW2&quot;:&nbsp;dW2,&nbsp;&quot;db2&quot;:&nbsp;db2,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;dA1&quot;:&nbsp;dA1,&nbsp;&quot;dZ1&quot;:&nbsp;dZ1,&nbsp;&quot;dW1&quot;:&nbsp;dW1,&nbsp;&quot;db1&quot;:&nbsp;db1}
+&nbsp;&nbsp;&nbsp;
+return&nbsp;gradients</pre><p style="text-indent:28px"><span style="font-family:宋体">您在欺诈检测测试集中获得了一些结果，但您并不是</span>100<span style="font-family:宋体">％确定您的模型。没有人是完美的！让我们实施梯度检验，以验证您的梯度是否正确。</span></p><p style="text-indent:28px"><strong><span style=";font-family:宋体;color:black;background:white">梯度检验如何工作呢</span></strong><span style=";font-family:宋体;color:black;background:white">？</span></p><p style="text-indent:28px"><span style="font-family:宋体">如</span>1<span style="font-family:宋体">）和</span>2<span style="font-family:宋体">）所示，您要将“</span>gradapprox<span style="font-family:宋体">”与通过反向传播计算的梯度进行比较。公示依</span><span style=";font-family:宋体">旧不变。</span></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size:14px">然而，θ就变成了一个字典parameters。我们运行函数</span><span style="font-size: 14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&quot;</span><code style="box-sizing: border-box;border-radius: 2px;white-space:pre-wrap"><span style="font-size:14px;font-family:&#39;Courier New&#39;;color:black;border:none windowtext 1px;padding:0;background:white">dictionary_to_vector()</span></code><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&quot;</span><span style="font-size:14px;color:black">。这个函数将字典转变成一个称为“</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">value</span><span style="font-size:14px;color:black">”的向量。这个函数是通过重组所有的元素</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">(W1, b1, W2, b2, W3, b3)</span><span style="font-size:14px;color:black">成为向量并连接他们。</span></p><p style=";margin-bottom:0;text-indent:28px;background:white"><span style="font-size:14px;color:black">反函数</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&quot;vector_to_dictionary&quot;</span><span style="font-size: 14px;color:black">是将输出返回为</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">parameters</span><span style="font-size:14px;color:black">字典。</span></p><p style="margin-bottom: 0px; text-indent: 28px; background: white; text-align: center;"><span style="font-size:14px;color:black"><img src="/wp-content/uploads/image/20180208/1518026621729847.jpg" title="1518026621729847.jpg" alt="5.jpg"/></span></p><p style="margin-bottom: 0px; text-indent: 28px; background: white; text-align: center;"><span style="font-size:14px;color:black"><img src="/wp-content/uploads/image/20180208/1518026635299548.jpg" title="1518026635299548.jpg" alt="1518026635299548.jpg" width="670" height="236"/></span></p><p style="margin-bottom: 0px; text-indent: 28px; background: white;"><span style="font-size:14px;color:black"></span></p><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black"></span></p><pre class="brush:python;toolbar:false">#&nbsp;GRADED&nbsp;FUNCTION:&nbsp;gradient_check_n
+def&nbsp;gradient_check_n(parameters,&nbsp;
+gradients,&nbsp;X,&nbsp;Y,&nbsp;epsilon&nbsp;=&nbsp;1e-7):
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;Checks&nbsp;if&nbsp;backward_propagation_n&nbsp;computes&nbsp;correctly
+the&nbsp;gradient&nbsp;of&nbsp;the&nbsp;cost&nbsp;output&nbsp;by&nbsp;forward_propagation_n
+&nbsp;&nbsp;&nbsp;&nbsp;Arguments:
+&nbsp;&nbsp;&nbsp;&nbsp;parameters&nbsp;--&nbsp;python&nbsp;dictionary&nbsp;containing&nbsp;your&nbsp;
+parameters&nbsp;&quot;W1&quot;,&nbsp;&quot;b1&quot;,&nbsp;&quot;W2&quot;,&nbsp;&quot;b2&quot;,&nbsp;&quot;W3&quot;,&nbsp;&quot;b3&quot;:
+&nbsp;&nbsp;&nbsp;&nbsp;grad&nbsp;--&nbsp;output&nbsp;of&nbsp;backward_propagation_n,&nbsp;contains&nbsp;
+gradients&nbsp;of&nbsp;the&nbsp;cost&nbsp;with&nbsp;respect&nbsp;to&nbsp;the&nbsp;parameters.&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;--&nbsp;input&nbsp;datapoint,&nbsp;of&nbsp;shape&nbsp;(input&nbsp;size,&nbsp;1)
+&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;--&nbsp;true&nbsp;&quot;label&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;epsilon&nbsp;--&nbsp;tiny&nbsp;shift&nbsp;to&nbsp;the&nbsp;input&nbsp;to&nbsp;compute&nbsp;
+approximated&nbsp;gradient&nbsp;with&nbsp;formula(1)
+&nbsp;&nbsp;&nbsp;&nbsp;Returns:
+&nbsp;&nbsp;&nbsp;&nbsp;difference&nbsp;--&nbsp;difference&nbsp;(2)&nbsp;between&nbsp;the&nbsp;approximated&nbsp;
+gradient&nbsp;and&nbsp;the&nbsp;backward&nbsp;propagation&nbsp;gradient
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Set-up&nbsp;variables
+&nbsp;&nbsp;&nbsp;&nbsp;parameters_values,&nbsp;_&nbsp;=&nbsp;dictionary_to_vector(parameters)
+&nbsp;&nbsp;&nbsp;&nbsp;#print(&quot;parameters_values:&quot;,&nbsp;parameters_values)
+&nbsp;&nbsp;&nbsp;&nbsp;grad&nbsp;=&nbsp;gradients_to_vector(gradients)
+&nbsp;&nbsp;&nbsp;&nbsp;#print(&quot;grad:&quot;,&nbsp;grad)
+&nbsp;&nbsp;&nbsp;&nbsp;num_parameters&nbsp;=&nbsp;parameters_values.shape[0]
+&nbsp;&nbsp;&nbsp;&nbsp;J_plus&nbsp;=&nbsp;np.zeros((num_parameters,&nbsp;1))
+&nbsp;&nbsp;&nbsp;&nbsp;J_minus&nbsp;=&nbsp;np.zeros((num_parameters,&nbsp;1))
+&nbsp;&nbsp;&nbsp;&nbsp;gradapprox&nbsp;=&nbsp;np.zeros((num_parameters,&nbsp;1))
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compute&nbsp;gradapprox
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i&nbsp;in&nbsp;range(num_parameters):
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compute&nbsp;J_plus[i].&nbsp;Inputs:&nbsp;&quot;parameters_values,&nbsp;epsilon&quot;.&nbsp;
+#Output&nbsp;=&nbsp;&quot;J_plus[i]&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;&quot;_&quot;&nbsp;is&nbsp;used&nbsp;because&nbsp;the&nbsp;function&nbsp;you&nbsp;have&nbsp;to&nbsp;outputs&nbsp;two&nbsp;
+#parameters&nbsp;but&nbsp;we&nbsp;only&nbsp;care&nbsp;about&nbsp;the&nbsp;first&nbsp;one
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;3&nbsp;lines)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thetaplus&nbsp;=&nbsp;np.copy(parameters_values)#&nbsp;Step&nbsp;1
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thetaplus[i][0]&nbsp;=&nbsp;thetaplus[i][0]&nbsp;+&nbsp;epsilon#&nbsp;Step&nbsp;2
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;J_plus[i],&nbsp;_&nbsp;=&nbsp;forward_propagation_n
+(X,&nbsp;Y,&nbsp;vector_to_dictionary(thetaplus))&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Step&nbsp;3
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compute&nbsp;J_minus[i].&nbsp;Inputs:&nbsp;&quot;parameters_values,&nbsp;epsilon&quot;.&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#Output&nbsp;=&nbsp;&quot;J_minus[i]&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;3&nbsp;lines)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thetaminus&nbsp;=&nbsp;np.copy(parameters_values)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thetaminus[i][0]&nbsp;=&nbsp;thetaminus[i][0]&nbsp;-&nbsp;epsilon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;J_minus[i],&nbsp;_&nbsp;=&nbsp;forward_propagation_n
+(X,&nbsp;Y,&nbsp;vector_to_dictionary(thetaminus))&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compute&nbsp;gradapprox[i]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gradapprox[i]&nbsp;=&nbsp;(J_plus[i]&nbsp;-&nbsp;J_minus[i])&nbsp;/&nbsp;(2&nbsp;*&nbsp;epsilon)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;Compare&nbsp;gradapprox&nbsp;to&nbsp;backward&nbsp;propagation&nbsp;gradients&nbsp;by&nbsp;
+#computing&nbsp;difference.
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;START&nbsp;CODE&nbsp;HERE&nbsp;###&nbsp;(approx.&nbsp;1&nbsp;line)
+&nbsp;&nbsp;&nbsp;&nbsp;numerator&nbsp;=&nbsp;np.linalg.norm(grad&nbsp;-&nbsp;gradapprox)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;denominator&nbsp;=&nbsp;np.linalg.norm(grad)&nbsp;+&nbsp;np.linalg.norm(gradapprox)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;difference&nbsp;=&nbsp;numerator&nbsp;/&nbsp;denominator&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;###&nbsp;END&nbsp;CODE&nbsp;HERE&nbsp;###
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;difference&nbsp;&gt;&nbsp;1e-7:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;(&quot;\033[93m&quot;&nbsp;+&nbsp;&quot;There&nbsp;is&nbsp;a&nbsp;mistake&nbsp;in&nbsp;the&nbsp;
+backward&nbsp;propagation!&nbsp;difference&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(difference)&nbsp;+&nbsp;&quot;\033[0m&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;else:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;(&quot;\033[92m&quot;&nbsp;+&nbsp;&quot;Your&nbsp;backward&nbsp;propagation&nbsp;works
+&nbsp;perfectly&nbsp;fine!&nbsp;difference&nbsp;=&nbsp;&quot;&nbsp;+&nbsp;str(difference)&nbsp;+&nbsp;&quot;\033[0m&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;difference</pre><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black"></span><br/></p><p style="background:white"><span style="font-size:14px;color:black">测试一下：</span></p><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black"></span></p><pre class="brush:python;toolbar:false">X,&nbsp;Y,&nbsp;parameters&nbsp;=&nbsp;gradient_check_n_test_case()
+&nbsp;
+cost,&nbsp;cache&nbsp;=&nbsp;forward_propagation_n(X,&nbsp;Y,&nbsp;parameters)
+gradients&nbsp;=&nbsp;backward_propagation_n(X,&nbsp;Y,&nbsp;cache)
+difference&nbsp;=&nbsp;gradient_check_n(parameters,&nbsp;gradients,&nbsp;X,&nbsp;Y)</pre><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black"></span><br/></p><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&nbsp;</span></p><p style="background:white"><span style="font-size:14px;color:black">结果是：</span></p><p style=";margin-bottom:0;background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">There is a mistake in the backward propagation! difference = 1.18904178788e-07</span></p><p style="background:white"><span style="font-size:14px;color:black">看来我们给你的</span><span style="font-size:14px;font-family: &#39;Helvetica&#39;,sans-serif;color:black">backward_propagation_n</span><span style="font-size:14px;color:black">代码有错误！</span> <span style="font-size:14px;color:black">很好，你已经实施了梯度检验。</span> <span style="font-size:14px;color:black">返回到</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">backward_propagation</span><span style="font-size:14px;color:black">并尝试查找</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">/</span><span style="font-size: 14px;color:black">更正错误（提示：检查</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">dW2</span><span style="font-size:14px;color:black">和</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">db1</span><span style="font-size:14px;color:black">）。</span> <span style="font-size:14px;color:black">当你认为你已经修复了，重新运行渐变检查。</span> <span style="font-size:14px;color:black">请记住，如果修改代码，则需要重新执行定义</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">backward_propagation_n</span><span style="font-size:14px;color:black">（）的单元格。</span></p><p style="background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&nbsp;</span></p><p style=";margin-bottom:0;background:white"><span style="font-size:14px;color:black">你能得到梯度检验来声明你的派生计算是正确的吗？</span> <span style="font-size:14px;color:black">即使这部分任务没有分级，但我们强烈建议您尝试查找错误并重新运行梯度检验，直到您确信</span><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">backprop</span><span style="font-size:14px;color:black">现在已正确实施。</span></p><p style=";margin-bottom:0;background:white"><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:black">&nbsp;</span></p><p style=";margin-bottom:0;background:white"><strong><span style="font-size:14px;color:red">牢记：</span></strong></p><p style="background:white"><strong><span style="font-size:14px;color:red">梯度检验验证反向传播梯度与梯度的数值近似（使用正向传播计算）之间的接近程度。</span></strong></p><p style=";margin-bottom:0;background:white"><strong><span style="font-size:14px;color:red">梯度检验很慢，所以我们不会在每次迭代训练中运行它。</span></strong><strong> </strong><strong><span style="font-size:14px;color:red">你通常会运行它，只是为了确保你的代码是正确的，然后把它关闭，并使用</span></strong><strong><span style="font-size:14px;font-family:&#39;Helvetica&#39;,sans-serif;color:red">backprop</span></strong><strong><span style="font-size:14px;color:red">实际的学习过程。</span></strong></p><p style="margin-bottom: 0px; text-indent: 28px; background: white;"><span style="font-size:14px;color:black"><br/></span><br/></p><p style="margin-bottom: 0px; text-indent: 28px; background: white;"><br/></p>
